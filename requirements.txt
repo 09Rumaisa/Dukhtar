@@ -15,3 +15,92 @@ numpy==1.24.3
 Pillow==10.0.1
 requests==2.31.0
 tavily-python==0.2.8
+# Flask and Web Framework
+Flask==2.3.3
+Werkzeug==2.3.7
+
+# Database
+psycopg2-binary==2.9.7
+
+# AI and Machine Learning
+openai==1.3.7
+langchain==0.0.340
+langchain-community==0.0.2
+langchain-core==0.1.3
+langchain-openai==0.0.2
+tavily-python==0.3.0
+
+# Vector Database and Embeddings
+chromadb==0.4.18
+
+# Web Scraping and Document Processing
+beautifulsoup4==4.12.2
+requests==2.31.0
+lxml==4.9.3
+
+# Text Processing
+tiktoken==0.5.1
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# UUID and Date/Time (built-in modules, but listing for clarity)
+uuid
+datetime
+
+# Additional dependencies that might be needed
+numpy==1.24.3
+pandas==1.5.3
+pydantic==2.5.0
+typing-extensions==4.8.0
+
+# For audio processing (if needed for voice features)
+pydub==0.25.1
+
+# For file handling
+pathlib2==2.3.7
+
+# Security
+cryptography==41.0.7
+
+# JSON handling (built-in, but some packages may need specific versions)
+jsonschema==4.17.3
+
+# HTTP client
+httpx==0.25.2
+
+# For async operations (if needed)
+aiohttp==3.9.1
+
+# Logging
+loguru==0.7.2
+
+# Data validation
+validators==0.22.0
+
+# For image processing (if needed)
+Pillow==10.1.0
+
+# For file type detection
+python-magic==0.4.27
+
+# For timezone handling
+pytz==2023.3
+
+# For markdown processing (if needed)
+markdown==3.5.1
+
+# For HTML parsing
+html5lib==1.1
+
+# For SSL/TLS
+certifi==2023.11.17
+
+# For URL parsing
+urllib3==2.1.0
+
+# For character encoding detection
+chardet==5.2.0
+
+# For ID generation
+shortuuid==1.0.11
