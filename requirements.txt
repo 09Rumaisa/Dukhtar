@@ -17,3 +17,4 @@ opencv-python>=4.8.0
 gtts>=2.4.0
 SpeechRecognition>=3.10.0
 langdetect>=1.0.9
+Pillow==10.0.0
