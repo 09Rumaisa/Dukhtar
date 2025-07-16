@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Pregnancy Guide - Week {{ user_info.pregnancy_week }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-pink: #E91E63;
+            --primary-pink-dark: #C2185B;
+            --primary-pink-light: #F8BBD9;
+            --secondary-pink: #FCE4EC;
+            --accent-rose: #FF6B9D;
+            --accent-coral: #FFB3BA;
+            --neutral-dark: #2D3748;
+            --neutral-medium: #4A5568;
+            --neutral-light: #718096;
+            --neutral-lightest: #F7FAFC;
+            --white: #FFFFFF;
+            --gradient-primary: linear-gradient(135deg, #E91E63 0%, #AD1457 100%);
+            --gradient-secondary: linear-gradient(135deg, #FCE4EC 0%, #F8BBD9 100%);
+            --gradient-accent: linear-gradient(135deg, #FF6B9D 0%, #E91E63 100%);
+            --gradient-background: linear-gradient(135deg, #FFE4E1 0%, #FFF0F5 25%, #F8BBD9 50%, #E8C5E5 75%, #DDA0DD 100%);
+            --shadow-light: 0 4px 6px rgba(233, 30, 99, 0.1);
+            --shadow-medium: 0 8px 25px rgba(233, 30, 99, 0.15);
+            --shadow-heavy: 0 20px 40px rgba(233, 30, 99, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--neutral-dark);
+            background: var(--gradient-background);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3rem;
+            border-radius: 25px;
+            box-shadow: var(--shadow-heavy);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .header-icon {
+            font-size: 3rem;
+            color: var(--primary-pink);
+            margin-bottom: 1rem;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-light);
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            transform: translate(-50%, -50%);
+        }
+
+        .btn:hover::before {
+            width: 200px;
+            height: 200px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--gradient-accent);
+            color: white;
+        }
+
+        .btn-tertiary {
+            background: var(--gradient-secondary);
+            color: var(--neutral-dark);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn:disabled:hover {
+            transform: none;
+            box-shadow: var(--shadow-light);
+        }
+
+        .week-info {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            margin-bottom: 3rem;
+            text-align: center;
+            box-shadow: var(--shadow-medium);
+        }
+
+        .week-info h2 {
+            margin: 0 0 1rem 0;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .week-info p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            border-left: 4px solid var(--primary-pink);
+            box-shadow: var(--shadow-light);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .stat-card h3 {
+            margin: 0 0 1rem 0;
+            color: var(--primary-pink);
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--neutral-dark);
+        }
+
+        .article-content {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 3rem;
+            border-radius: 20px;
+            border: 1px solid rgba(233, 30, 99, 0.1);
+            margin-bottom: 3rem;
+            box-shadow: var(--shadow-light);
+            backdrop-filter: blur(10px);
+        }
+
+        .article-content h2 {
+            color: var(--primary-pink);
+            border-bottom: 3px solid var(--primary-pink);
+            padding-bottom: 1rem;
+            margin-top: 2.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .article-content h2:first-child {
+            margin-top: 0;
+        }
+
+        .article-content h3 {
+            color: var(--neutral-medium);
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .article-content p {
+            margin-bottom: 1.5rem;
+            text-align: justify;
+            font-size: 1.1rem;
+            line-height: 1.7;
+        }
+
+        .article-content ul, .article-content ol {
+            margin: 1.5rem 0;
+            padding-left: 2rem;
+        }
+
+        .article-content li {
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .weight-status {
+            padding: 2rem;
+            border-radius: 15px;
+            margin: 2rem 0;
+            font-weight: 600;
+            font-size: 1.1rem;
+            box-shadow: var(--shadow-light);
+        }
+
+        .weight-normal {
+            background: rgba(76, 175, 80, 0.1);
+            color: #2e7d32;
+            border-left: 4px solid #4caf50;
+        }
+
+        .weight-warning {
+            background: rgba(255, 152, 0, 0.1);
+            color: #ef6c00;
+            border-left: 4px solid #ff9800;
+        }
+
+        .weight-alert {
+            background: rgba(244, 67, 54, 0.1);
+            color: #c62828;
+            border-left: 4px solid #f44336;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .action-buttons .btn {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+        }
+
+        .disclaimer {
+            text-align: center;
+            margin-top: 3rem;
+            color: var(--neutral-light);
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid rgba(233, 30, 99, 0.1);
+        }
+
+        .disclaimer strong {
+            color: var(--primary-pink);
+        }
+
+        .audio-player {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin: 1rem 0;
+            box-shadow: var(--shadow-light);
+            display: none;
+        }
+
+        .audio-player audio {
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .container {
+                padding: 2rem;
+            }
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .action-buttons .btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+
+            .header-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .header-actions .btn {
+                width: 100%;
+                max-width: 250px;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1.5rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .week-info {
+                padding: 2rem;
+            }
+            
+            .article-content {
+                padding: 2rem;
+            }
+        }
+
+        @media print {
+            body { 
+                background: white;
+                padding: 0;
+            }
+            .container { 
+                box-shadow: none;
+                background: white;
+            }
+            .action-buttons { 
+                display: none;
+            }
+            .header-actions {
+                display: none;
+            }
+            .audio-player {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-icon">🤱</div>
+            <h1>Your Pregnancy Guide</h1>
+            <p style="color: var(--neutral-light); font-size: 1.1rem;">Your personalized pregnancy journey information</p>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="window.print()">
+                    <i class="fas fa-print"></i>
+                    Print Guide
+                </button>
+                <button class="btn btn-secondary" id="readAloudBtn" onclick="toggleReadAloud()">
+                    <i class="fas fa-play"></i>
+                    <span id="readAloudText">Read Aloud</span>
+                    <div class="loading-spinner" id="loadingSpinner"></div>
+                </button>
+            </div>
+            <div class="audio-player" id="audioPlayer">
+                <audio id="audioElement" controls></audio>
+            </div>
+        </div>
+        
+        <div class="week-info">
+            <h2>Week {{ user_info.pregnancy_week }} - {{ user_info.trimester }}{% if user_info.trimester == 1 %}st{% elif user_info.trimester == 2 %}nd{% else %}rd{% endif %} Trimester</h2>
+            <p>Your personalized pregnancy information</p>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>
+                    <i class="fas fa-calendar-week"></i>
+                    Current Week
+                </h3>
+                <div class="stat-value">{{ user_info.pregnancy_week }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>
+                    <i class="fas fa-weight"></i>
+                    Weight Gain
+                </h3>
+                <div class="stat-value">{{ "%.1f"|format(user_info.current_gain) }} kg</div>
+            </div>
+            <div class="stat-card">
+                <h3>
+                    <i class="fas fa-target"></i>
+                    Recommended Total
+                </h3>
+                <div class="stat-value">{{ user_info.recommended_gain }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>
+                    <i class="fas fa-heartbeat"></i>
+                    Pre-pregnancy Status
+                </h3>
+                <div class="stat-value">{{ user_info.weight_status.title() }}</div>
+            </div>
+        </div>
+        
+        {% if user_info.current_gain < (user_info.recommended_gain.split('-')[0]|float * 0.6) %}
+            <div class="weight-status weight-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                Your weight gain appears to be below the recommended range. Consider discussing this with your healthcare provider.
+            </div>
+        {% elif user_info.current_gain > (user_info.recommended_gain.split('-')[1]|float * 1.2) %}
+            <div class="weight-status weight-alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                Your weight gain appears to be above the recommended range. Please consult with your healthcare provider.
+            </div>
+        {% else %}
+            <div class="weight-status weight-normal">
+                <i class="fas fa-check-circle"></i>
+                Your weight gain appears to be within a healthy range. Keep up the good work!
+            </div>
+        {% endif %}
+        
+        <div class="article-content" id="articleContent">
+            {{ article|safe }}
+        </div>
+        
+        <div class="action-buttons">
+            <a href="{{ url_for('pregnancy_tracker') }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i>
+                Update Information
+            </a>
+            <a href="#" class="btn btn-tertiary" onclick="window.history.back()">
+                <i class="fas fa-arrow-left"></i>
+                Go Back
+            </a>
+        </div>
+        
+        <div class="disclaimer">
+            <p><strong>Disclaimer:</strong> This information is for educational purposes only and should not replace professional medical advice. Always consult with your healthcare provider for personalized medical guidance.</p>
+        </div>
+    </div>
+    
+    <script>
+        let isPlaying = false;
+        let currentAudio = null;
+        let currentAudioUrl = null;
+
+        // Format the article content better
+        document.addEventListener('DOMContentLoaded', function() {
+            const content = document.querySelector('.article-content');
+            if (content) {
+                // Add some basic formatting improvements
+                content.innerHTML = content.innerHTML
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/\n\n/g, '</p><p>')
+                    .replace(/^(.*)$/gm, '<p>$1</p>');
+            }
+        });
+
+        function toggleReadAloud() {
+            if (isPlaying) {
+                stopAudio();
+            } else {
+                startReadAloud();
+            }
+        }
+
+        function startReadAloud() {
+            const readAloudBtn = document.getElementById('readAloudBtn');
+            const readAloudText = document.getElementById('readAloudText');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const audioPlayer = document.getElementById('audioPlayer');
+            const audioElement = document.getElementById('audioElement');
+
+            // Show loading state
+            readAloudBtn.disabled = true;
+            readAloudText.style.display = 'none';
+            loadingSpinner.style.display = 'inline-block';
+
+            // Get the article content
+            const articleContent = document.getElementById('articleContent');
+            let textToRead = articleContent.innerText;
+
+            // Add some context from the page
+            const weekInfo = document.querySelector('.week-info h2').innerText;
+            const weightStatus = document.querySelector('.weight-status');
+            let weightStatusText = '';
+            if (weightStatus) {
+                weightStatusText = weightStatus.innerText;
+            }
+
+            // Combine all text
+            const fullText = `${weekInfo}. ${weightStatusText}. ${textToRead}`;
+
+            // Get the language from the user info (you'll need to pass this from the backend)
+            const language = '{{ user_info.language if user_info.language else "english" }}';
+
+            // Send request to generate speech
+            fetch('/generate_speech', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    text: fullText,
+                    voice: 'nova',
+                    language: language
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.audio_url) {
+                    // Store the audio URL for cleanup
+                    currentAudioUrl = data.audio_url;
+                    
+                    // Set up audio element
+                    audioElement.src = data.audio_url;
+                    audioElement.load();
+                    
+                    // Show audio player
+                    audioPlayer.style.display = 'block';
+                    
+                    // Update button state
+                    isPlaying = true;
+                    readAloudBtn.disabled = false;
+                    readAloudText.style.display = 'inline';
+                    readAloudText.innerText = 'Stop Reading';
+                    loadingSpinner.style.display = 'none';
+                    readAloudBtn.querySelector('i').className = 'fas fa-stop';
+                    
+                    // Auto-play
+                    audioElement.play();
+                    
+                    // Handle audio end
+                    audioElement.addEventListener('ended', stopAudio);
+                    
+                } else {
+                    throw new Error(data.error || 'Failed to generate speech');
+                }
+            })
+            .catch(error => {
+                console.error('Error generating speech:', error);
+                alert('Sorry, there was an error generating the audio. Please try again.');
+                
+                // Reset button state
+                readAloudBtn.disabled = false;
+                readAloudText.style.display = 'inline';
+                readAloudText.innerText = 'Read Aloud';
+                loadingSpinner.style.display = 'none';
+                readAloudBtn.querySelector('i').className = 'fas fa-play';
+            });
+        }
+
+        function stopAudio() {
+            const readAloudBtn = document.getElementById('readAloudBtn');
+            const readAloudText = document.getElementById('readAloudText');
+            const audioPlayer = document.getElementById('audioPlayer');
+            const audioElement = document.getElementById('audioElement');
+
+            // Stop and reset audio
+            audioElement.pause();
+            audioElement.currentTime = 0;
+            
+            // Hide audio player
+            audioPlayer.style.display = 'none';
+            
+            // Reset button state
+            isPlaying = false;
+            readAloudText.innerText = 'Read Aloud';
+            readAloudBtn.querySelector('i').className = 'fas fa-play';
+            
+            // Clean up audio file
+            if (currentAudioUrl) {
+                const filename = currentAudioUrl.split('/').pop();
+                fetch('/cleanup_audio', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        filename: filename
+                    })
+                })
+                .catch(error => console.error('Error cleaning up audio:', error));
+                
+                currentAudioUrl = null;
+            }
+        }
+
+        // Clean up audio when page is closed
+        window.addEventListener('beforeunload', function() {
+            if (currentAudioUrl) {
+                const filename = currentAudioUrl.split('/').pop();
+                navigator.sendBeacon('/cleanup_audio', JSON.stringify({
+                    filename: filename
+                }));
+            }
+        });
+    </script>
+</body>
+</html>

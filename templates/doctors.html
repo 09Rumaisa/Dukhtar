@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find a Doctor - Dukhtar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container" style="padding-top: 4rem;">
+        <a href="/" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            <span>Back to Home</span>
+        </a>
+        <h2 style="color: var(--primary-pink); margin-bottom: 2rem;">Find a Doctor</h2>
+        <form id="filterForm" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem;">
+            <input type="text" class="form-input" name="specialization" placeholder="Specialization" style="flex:1; min-width:180px;">
+            <input type="number" class="form-input" name="min_rating" min="1" max="5" step="0.1" placeholder="Min Rating" style="width:120px;">
+            <input type="number" class="form-input" name="max_fee" min="0" placeholder="Max Fee" style="width:120px;">
+            <button type="submit" class="btn btn-primary" style="min-width:120px;">Filter</button>
+        </form>
+        
+        <!-- Status Bar -->
+        <div id="status" style="margin-bottom: 2rem; color: var(--neutral-medium); font-weight: 500;"></div>
+        
+        <div id="doctorsList" class="row" style="display: flex; flex-wrap: wrap; gap: 2rem;"></div>
+    </div>
+
+    <script>
+        console.log('Script loaded');
+        
+        // Test if basic JavaScript works
+        document.getElementById('status').innerHTML = 'JavaScript is working';
+        
+        function renderDoctors(doctors) {
+            console.log('renderDoctors called with:', doctors);
+            const list = document.getElementById('doctorsList');
+            
+            if (!doctors || doctors.length === 0) {
+                list.innerHTML = '<div class="col-12"><p style="color:var(--neutral-light);text-align:center;">No doctors found.</p></div>';
+                return;
+            }
+            
+            let html = '';
+            doctors.forEach((doc, index) => {
+                console.log(`Processing doctor ${index}:`, doc);
+                
+                // Handle profile image path like in second file
+                const imgPath = doc.profile_image_url 
+                    ? (doc.profile_image_url.startsWith('/static/') ? doc.profile_image_url : '/static/doctors_profile/' + doc.profile_image_url)
+                    : '/static/doctors_profile/d1.png';
+                
+                // Generate star rating
+                const rating = doc.rating || 0;
+                
+                html += `
+                <div style="flex:1 1 320px; max-width:350px; min-width:260px; background:var(--white); border-radius:20px; box-shadow:var(--shadow-light); display:flex; flex-direction:column; align-items:center; padding:1.5rem;">
+                    <img src="${imgPath}" alt="Doctor Image" style="width:100px; height:100px; object-fit:cover; border-radius:50%; margin-bottom:1rem; border:3px solid var(--primary-pink-light);" onerror="this.src='/static/doctors_profile/d1.png'">
+                    <h5 style="color:var(--primary-pink); margin-bottom:0.5rem;">${doc.full_name || 'Unknown Doctor'}</h5>
+                    <div style="color:var(--neutral-medium); font-size:1rem; margin-bottom:0.5rem;">${doc.specialization || 'Not specified'} <br> ${doc.qualification || 'Not specified'}</div>
+                    <div style="color:var(--neutral-light); font-size:0.95rem; margin-bottom:0.5rem;">Experience: ${doc.experience_years || 0} years</div>
+                    <div style="color:var(--primary-pink-dark); font-weight:600; margin-bottom:0.5rem;">Fee: Rs. ${doc.consultation_fee || 0}</div>
+                    <div style="color:var(--accent-rose); font-size:0.95rem; margin-bottom:0.5rem;">★ ${rating} (${doc.total_reviews || 0} reviews)</div>
+                    ${doc.hospital_affiliation ? `<div style='color:var(--neutral-light); font-size:0.9rem; margin-bottom:0.5rem;'>${doc.hospital_affiliation}</div>` : ''}
+                    <a href="/doctors/${doc.doctor_id}" class="btn btn-outline" style="margin-top:1rem;">View Details</a>
+                </div>`;
+            });
+            
+            list.innerHTML = html;
+            console.log('HTML generated:', html);
+        }
+        
+        // Test function
+        function testClick(doctorId) {
+            console.log('testClick called with ID:', doctorId);
+            alert(`Click works! Doctor ID: ${doctorId}`);
+            
+            // Try navigation
+            const url = `/doctors/${doctorId}`;
+            console.log('Attempting to navigate to:', url);
+            
+            // Test the URL first
+            fetch(url, { method: 'HEAD' })
+                .then(response => {
+                    console.log('URL test response:', response.status);
+                    if (response.ok) {
+                        console.log('URL is valid, navigating...');
+                        window.location.href = url;
+                    } else {
+                        console.error('URL returned status:', response.status);
+                        alert(`URL ${url} returned status ${response.status}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('URL test failed:', error);
+                    alert(`URL test failed: ${error.message}`);
+                });
+        }
+        
+        function fetchDoctors(params = {}) {
+            console.log('fetchDoctors called with params:', params);
+            document.getElementById('status').innerHTML = 'Fetching doctors...';
+            
+            let url = '/api/doctors?';
+            url += new URLSearchParams(params).toString();
+            
+            fetch(url)
+                .then(response => {
+                    console.log('Response received:', response);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Data received:', data);
+                    document.getElementById('status').innerHTML = `Loaded ${data.doctors ? data.doctors.length : 0} doctors`;
+                    
+                    if (data.success) {
+                        renderDoctors(data.doctors);
+                    } else {
+                        console.error('API returned error:', data.error);
+                        document.getElementById('status').innerHTML = 'Error: ' + (data.error || 'Unknown error');
+                        alert(data.error || 'Failed to load doctors');
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    document.getElementById('status').innerHTML = 'Network error: ' + error.message;
+                    
+                    // Fallback: create a test doctor for debugging
+                    console.log('Creating test doctor for debugging');
+                    renderDoctors([{
+                        doctor_id: 1,
+                        full_name: 'Dr. Sarah Johnson',
+                        specialization: 'Gynecologist',
+                        qualification: 'MBBS, MD Gynecology',
+                        experience_years: 8,
+                        consultation_fee: 1500,
+                        rating: 4.5,
+                        total_reviews: 127,
+                        hospital_affiliation: 'City General Hospital',
+                        languages_spoken: 'English, Urdu',
+                        profile_image_url: '/static/doctors_profile/d1.png'
+                    }]);
+                });
+        }
+        
+        // Filter form submission
+        document.getElementById('filterForm').onsubmit = function(e) {
+            e.preventDefault();
+            const form = e.target;
+            fetchDoctors({
+                specialization: form.specialization.value,
+                min_rating: form.min_rating.value,
+                max_fee: form.max_fee.value
+            });
+        };
+        
+        // Load doctors when page loads
+        window.onload = function() {
+            console.log('Page loaded, starting fetch...');
+            fetchDoctors();
+        };
+        
+    </script>
+</body>
+</html>

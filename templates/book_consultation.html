@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Consultation - Dukhtar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .booking-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            padding-top: 4rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary-pink);
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-light);
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            transform: translateX(-5px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .page-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--neutral-dark);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .doctor-summary {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-light);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .doctor-card {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .doctor-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--primary-pink-light);
+            box-shadow: var(--shadow-light);
+        }
+
+        .doctor-info h5 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--neutral-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .doctor-info p {
+            color: var(--neutral-medium);
+            margin-bottom: 0.5rem;
+        }
+
+        .doctor-fee {
+            color: var(--primary-pink);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .booking-form {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-light);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: var(--neutral-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--primary-pink-light);
+            border-radius: 12px;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-pink);
+            box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--primary-pink-light);
+            border-radius: 12px;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary-pink);
+            box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 1rem 2rem;
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-light);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .booking-message {
+            margin-top: 2rem;
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: rgba(72, 187, 120, 0.1);
+            color: #22543d;
+            border: 1px solid rgba(72, 187, 120, 0.2);
+        }
+
+        .alert-danger {
+            background: rgba(245, 101, 101, 0.1);
+            color: #742a2a;
+            border: 1px solid rgba(245, 101, 101, 0.2);
+        }
+
+        .meeting-link {
+            display: inline-block;
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--primary-pink);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .meeting-link:hover {
+            background: var(--primary-pink-dark);
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 768px) {
+            .booking-container {
+                padding: 1rem;
+            }
+            
+            .doctor-card {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .doctor-image {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .page-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="booking-container" id="bookConsultationContainer">
+        <a href="/doctors" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            <span>Back to Doctors</span>
+        </a>
+        
+        <h1 class="page-title">Book a Consultation</h1>
+        
+        <div id="doctorSummary" class="doctor-summary"></div>
+        
+        <div class="booking-form">
+            <form id="bookConsultationForm">
+                <input type="hidden" name="doctor_id" id="doctor_id">
+                
+                <div class="form-group">
+                    <label for="appointment_date" class="form-label">Appointment Date</label>
+                    <input type="date" class="form-input" name="appointment_date" id="appointment_date" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="appointment_time" class="form-label">Appointment Time</label>
+                    <input type="time" class="form-input" name="appointment_time" id="appointment_time" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="consultation_type" class="form-label">Consultation Type</label>
+                    <select class="form-select" name="consultation_type" id="consultation_type" required>
+                        <option value="in_person">In Person</option>
+                        <option value="video">Video Consultation</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="duration_minutes" class="form-label">Duration (minutes)</label>
+                    <input type="number" class="form-input" name="duration_minutes" id="duration_minutes" value="30" min="10" max="120">
+                </div>
+                
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Book Consultation</span>
+                </button>
+            </form>
+        </div>
+        
+        <div id="bookingMessage" class="booking-message"></div>
+    </div>
+
+    <script>
+        function getDoctorIdFromUrl() {
+            const parts = window.location.pathname.split('/');
+            return parts[parts.length - 2];
+        }
+        
+        function renderDoctorSummary(doctor) {
+            // Handle profile image path
+            const imgPath = doctor.profile_image_url 
+                ? (doctor.profile_image_url.startsWith('/static/') ? doctor.profile_image_url : '/static/doctors_profile/' + doctor.profile_image_url)
+                : '/static/doctors_profile/d1.png';
+                
+            document.getElementById('doctorSummary').innerHTML = `
+                <div class="doctor-card">
+                    <img src="${imgPath}" alt="Doctor Image" class="doctor-image" onerror="this.src='/static/doctors_profile/d1.png'">
+                    <div class="doctor-info">
+                        <h5>${doctor.full_name}</h5>
+                        <p>${doctor.specialization} | ${doctor.qualification}</p>
+                        <p class="doctor-fee">Consultation Fee: Rs. ${doctor.consultation_fee}</p>
+                    </div>
+                </div>`;
+        }
+        
+        window.onload = function() {
+            const doctorId = getDoctorIdFromUrl();
+            fetch(`/api/doctors/${doctorId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        renderDoctorSummary(data.doctor);
+                        document.getElementById('doctor_id').value = doctorId;
+                    } else {
+                        document.getElementById('doctorSummary').innerHTML = `<div class='alert alert-danger'>${data.error}</div>`;
+                    }
+                });
+                
+            document.getElementById('bookConsultationForm').onsubmit = function(e) {
+                e.preventDefault();
+                const form = e.target;
+                const payload = {
+                    doctor_id: form.doctor_id.value,
+                    appointment_date: form.appointment_date.value,
+                    appointment_time: form.appointment_time.value,
+                    consultation_type: form.consultation_type.value,
+                    duration_minutes: form.duration_minutes.value
+                };
+                
+                fetch('/api/consultations/book', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        let message = `<div class='alert alert-success'>${data.message}`;
+                        if (data.meeting_link) {
+                            message += `<br><a href="${data.meeting_link}" target="_blank" class="meeting-link">Join Meeting</a>`;
+                        }
+                        message += '</div>';
+                        document.getElementById('bookingMessage').innerHTML = message;
+                        form.reset();
+                    } else {
+                        document.getElementById('bookingMessage').innerHTML = `<div class='alert alert-danger'>${data.error}</div>`;
+                    }
+                });
+            };
+        };
+    </script>
+</body>
+</html> 

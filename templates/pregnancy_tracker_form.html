@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pregnancy Tracker - Dukhtar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-pink: #E91E63;
+            --primary-pink-dark: #C2185B;
+            --primary-pink-light: #F8BBD9;
+            --secondary-pink: #FCE4EC;
+            --accent-rose: #FF6B9D;
+            --accent-coral: #FFB3BA;
+            --neutral-dark: #2D3748;
+            --neutral-medium: #4A5568;
+            --neutral-light: #718096;
+            --neutral-lightest: #F7FAFC;
+            --white: #FFFFFF;
+            --gradient-primary: linear-gradient(135deg, #E91E63 0%, #AD1457 100%);
+            --gradient-secondary: linear-gradient(135deg, #FCE4EC 0%, #F8BBD9 100%);
+            --gradient-accent: linear-gradient(135deg, #FF6B9D 0%, #E91E63 100%);
+            --gradient-background: linear-gradient(135deg, #FFE4E1 0%, #FFF0F5 25%, #F8BBD9 50%, #E8C5E5 75%, #DDA0DD 100%);
+            --shadow-light: 0 4px 6px rgba(233, 30, 99, 0.1);
+            --shadow-medium: 0 8px 25px rgba(233, 30, 99, 0.15);
+            --shadow-heavy: 0 20px 40px rgba(233, 30, 99, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--neutral-dark);
+            background: var(--gradient-background);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3rem;
+            border-radius: 25px;
+            box-shadow: var(--shadow-heavy);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .header-icon {
+            font-size: 3rem;
+            color: var(--primary-pink);
+            margin-bottom: 1rem;
+        }
+
+        .info {
+            background: var(--gradient-secondary);
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--primary-pink);
+            box-shadow: var(--shadow-light);
+        }
+
+        .info strong {
+            color: var(--primary-pink-dark);
+            font-size: 1.1rem;
+        }
+
+        .error {
+            background: #FFEBEE;
+            color: #C62828;
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #F44336;
+            box-shadow: var(--shadow-light);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: var(--neutral-dark);
+            font-size: 1rem;
+        }
+
+        .required {
+            color: var(--primary-pink);
+        }
+
+        input[type="number"], 
+        input[type="text"], 
+        select, 
+        textarea {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 2px solid rgba(233, 30, 99, 0.2);
+            border-radius: 15px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        input[type="number"]:focus, 
+        input[type="text"]:focus, 
+        select:focus, 
+        textarea:focus {
+            border-color: var(--primary-pink);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
+            transform: translateY(-2px);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .submit-btn {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 1.25rem 3rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-medium);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            transform: translate(-50%, -50%);
+        }
+
+        .submit-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-heavy);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary-pink);
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--primary-pink-dark);
+            transform: translateX(-5px);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .container {
+                padding: 2rem;
+            }
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .submit-btn {
+                padding: 1rem 2rem;
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1.5rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .info {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-icon">🤱</div>
+            <h1>Pregnancy Tracker</h1>
+            <p style="color: var(--neutral-light); font-size: 1.1rem;">Your personalized pregnancy journey starts here</p>
+        </div>
+        
+        <div class="info">
+            <strong>Welcome!</strong> Please fill in your pregnancy details to receive personalized information about your baby's development, diet plans, exercises, and important health tips.
+        </div>
+        
+        {% if error %}
+            <div class="error">
+                <i class="fas fa-exclamation-triangle"></i>
+                {{ error }}
+            </div>
+        {% endif %}
+        
+        <form method="POST">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="pregnancy_week">
+                        <i class="fas fa-calendar-week"></i>
+                        Pregnancy Week <span class="required">*</span>
+                    </label>
+                    <input type="number" id="pregnancy_week" name="pregnancy_week" min="1" max="42" required placeholder="Enter week (1-42)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="trimester">
+                        <i class="fas fa-baby"></i>
+                        Trimester <span class="required">*</span>
+                    </label>
+                    <select id="trimester" name="trimester" required>
+                        <option value="">Select Trimester</option>
+                        <option value="1">First Trimester (1-12 weeks)</option>
+                        <option value="2">Second Trimester (13-28 weeks)</option>
+                        <option value="3">Third Trimester (29-42 weeks)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="current_weight">
+                        <i class="fas fa-weight"></i>
+                        Current Weight (kg) <span class="required">*</span>
+                    </label>
+                    <input type="number" id="current_weight" name="current_weight" step="0.1" min="30" max="200" required placeholder="e.g., 65.5">
+                </div>
+                
+                <div class="form-group">
+                    <label for="pre_pregnancy_weight">
+                        <i class="fas fa-weight-hanging"></i>
+                        Pre-pregnancy Weight (kg) <span class="required">*</span>
+                    </label>
+                    <input type="number" id="pre_pregnancy_weight" name="pre_pregnancy_weight" step="0.1" min="30" max="200" required placeholder="e.g., 60.0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="height">
+                        <i class="fas fa-ruler-vertical"></i>
+                        Height (cm) <span class="required">*</span>
+                    </label>
+                    <input type="number" id="height" name="height" min="100" max="250" required placeholder="e.g., 165">
+                </div>
+                
+                <div class="form-group">
+                    <label for="age">
+                        <i class="fas fa-birthday-cake"></i>
+                        Age <span class="required">*</span>
+                    </label>
+                    <input type="number" id="age" name="age" min="15" max="50" required placeholder="e.g., 28">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="activity_level">
+                    <i class="fas fa-running"></i>
+                    Activity Level
+                </label>
+                <select id="activity_level" name="activity_level">
+                    <option value="low">Low (Sedentary lifestyle)</option>
+                    <option value="moderate" selected>Moderate (Light exercise 1-3 times/week)</option>
+                    <option value="high">High (Regular exercise 3+ times/week)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="language">
+                    <i class="fas fa-language"></i>
+                    Preferred Language
+                </label>
+                <select id="language" name="language">
+                    <option value="english" selected>English</option>
+                    <option value="urdu">Urdu</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="dietary_restrictions">
+                    <i class="fas fa-utensils"></i>
+                    Dietary Restrictions (Optional)
+                </label>
+                <textarea id="dietary_restrictions" name="dietary_restrictions" rows="3" placeholder="e.g., vegetarian, diabetic, allergies to specific foods..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="medical_conditions">
+                    <i class="fas fa-heartbeat"></i>
+                    Medical Conditions (Optional)
+                </label>
+                <textarea id="medical_conditions" name="medical_conditions" rows="3" placeholder="e.g., gestational diabetes, high blood pressure, thyroid issues..."></textarea>
+            </div>
+            
+            <button type="submit" class="submit-btn">
+                <i class="fas fa-magic"></i>
+                Get My Pregnancy Guide
+            </button>
+        </form>
+        
+        <a href="/" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            Back to Home
+        </a>
+    </div>
+    
+    <script>
+        // Auto-select trimester based on pregnancy week
+        document.getElementById('pregnancy_week').addEventListener('input', function() {
+            const week = parseInt(this.value);
+            const trimesterSelect = document.getElementById('trimester');
+            
+            if (week >= 1 && week <= 12) {
+                trimesterSelect.value = '1';
+            } else if (week >= 13 && week <= 28) {
+                trimesterSelect.value = '2';
+            } else if (week >= 29 && week <= 42) {
+                trimesterSelect.value = '3';
+            }
+        });
+    </script>
+</body>
+</html>
