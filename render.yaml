@@ -15,9 +15,18 @@ services:
         fromDatabase:
           name: dukhtar-db
           property: connectionString
-      # Add your other environment variables in Render dashboard
       - key: FLASK_ENV
         value: production
+      # IMPORTANT: Add these in Render Dashboard -> Environment
+      # - OPENAI_API_KEY (required for AI features)
+      # - TAVILY_API_KEY (required for pregnancy guide search)
+      # - LANGSMITH_API_KEY (optional for monitoring)
+      # - AWS_ACCESS_KEY_ID (required for file storage)
+      # - AWS_SECRET_ACCESS_KEY (required for file storage)
+      # - AWS_REGION (e.g., us-east-1)
+      # - AWS_S3_IMAGES_BUCKET (your bucket name)
+      # - AWS_S3_AUDIO_BUCKET (your bucket name)
+      # - FLASK_SECRET_KEY (generate with: python -c "import secrets; print(secrets.token_hex(32))")
 
 databases:
   # PostgreSQL database

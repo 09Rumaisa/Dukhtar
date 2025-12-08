@@ -47,17 +47,30 @@
             doctors.forEach((doc, index) => {
                 console.log(`Processing doctor ${index}:`, doc);
                 
-                // Handle profile image path like in second file
-                const imgPath = doc.profile_image_url 
-                    ? (doc.profile_image_url.startsWith('/static/') ? doc.profile_image_url : '/static/doctors_profile/' + doc.profile_image_url)
-                    : '/static/doctors_profile/d1.png';
+                // Handle profile image path - check if it's already a full URL (S3) or local filename
+                let imgPath;
+                if (doc.profile_image_url) {
+                    if (doc.profile_image_url.startsWith('http')) {
+                        // Already a full URL (S3)
+                        imgPath = doc.profile_image_url;
+                    } else if (doc.profile_image_url.startsWith('/static/')) {
+                        // Local static path
+                        imgPath = doc.profile_image_url;
+                    } else {
+                        // Filename only - construct S3 URL
+                        imgPath = `https://dukhtar-doctorimages.s3.amazonaws.com/doctors/${doc.profile_image_url}`;
+                    }
+                } else {
+                    // Fallback to default image
+                    imgPath = 'https://dukhtar-doctorimages.s3.amazonaws.com/doctors/d1.png';
+                }
                 
                 // Generate star rating
                 const rating = doc.rating || 0;
                 
                 html += `
                 <div style="flex:1 1 320px; max-width:350px; min-width:260px; background:var(--white); border-radius:20px; box-shadow:var(--shadow-light); display:flex; flex-direction:column; align-items:center; padding:1.5rem;">
-                    <img src="${imgPath}" alt="Doctor Image" style="width:100px; height:100px; object-fit:cover; border-radius:50%; margin-bottom:1rem; border:3px solid var(--primary-pink-light);" onerror="this.src='/static/doctors_profile/d1.png'">
+                    <img src="${imgPath}" alt="Doctor Image" style="width:100px; height:100px; object-fit:cover; border-radius:50%; margin-bottom:1rem; border:3px solid var(--primary-pink-light);" onerror="this.src='https://dukhtar-doctorimages.s3.amazonaws.com/doctors/d1.png'">
                     <h5 style="color:var(--primary-pink); margin-bottom:0.5rem;">${doc.full_name || 'Unknown Doctor'}</h5>
                     <div style="color:var(--neutral-medium); font-size:1rem; margin-bottom:0.5rem;">${doc.specialization || 'Not specified'} <br> ${doc.qualification || 'Not specified'}</div>
                     <div style="color:var(--neutral-light); font-size:0.95rem; margin-bottom:0.5rem;">Experience: ${doc.experience_years || 0} years</div>

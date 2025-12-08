@@ -21,10 +21,27 @@ from main import DukhtarAgent
 from main import DUKHTAR_SYSTEM_PROMPT
 from psycopg2.extras import RealDictCursor
 
+# Helper function to construct S3 URLs for doctor images
+def get_doctor_image_url(profile_image_url):
+    """Convert doctor profile image filename to full S3 URL"""
+    if not profile_image_url:
+        return 'https://dukhtar-doctorimages.s3.amazonaws.com/doctors/d1.png'
+    
+    # If already a full URL, return as is
+    if profile_image_url.startswith('http'):
+        return profile_image_url
+    
+    # If it's a local static path, return as is (for backward compatibility)
+    if profile_image_url.startswith('/static/'):
+        return profile_image_url
+    
+    # Otherwise, construct S3 URL
+    return f"https://dukhtar-doctorimages.s3.amazonaws.com/doctors/{profile_image_url}"
 
 
-app = Flask(__name__,static_url_path='/static', static_folder='C:\\Users\\rumai\\OneDrive\\Desktop\\Dukhtar\\static')
-app.secret_key = 'your_secret_key'  # Used for session management
+
+app = Flask(__name__)
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your_secret_key_change_in_production')  # Used for session management
 
 # Global agent instance
 dukhtar_agent = DukhtarAgent()
@@ -285,16 +302,19 @@ def pregnancy_tracker():
         openai_key = os.getenv("OPENAI_API_KEY")
         
         if not tavily_key:
-            print("ERROR: TAVILY_API_KEY not found")
+            print("ERROR: TAVILY_API_KEY not found in environment variables")
+            print(f"Available env vars: {list(os.environ.keys())}")
             return render_template('pregnancy_tracker_form.html', 
-                                 error="API configuration error. Please contact support.")
+                                 error="Search API key not configured. Please ensure TAVILY_API_KEY is set in environment variables.")
         
         if not openai_key:
-            print("ERROR: OPENAI_API_KEY not found")
+            print("ERROR: OPENAI_API_KEY not found in environment variables")
             return render_template('pregnancy_tracker_form.html', 
-                                 error="API configuration error. Please contact support.")
+                                 error="AI API key not configured. Please ensure OPENAI_API_KEY is set in environment variables.")
         
         print("✓ API keys found")
+        print(f"✓ TAVILY_API_KEY: {tavily_key[:10]}...")
+        print(f"✓ OPENAI_API_KEY: {openai_key[:10]}...")
         
         # Initialize Tavily search tool with error handling
         try:
@@ -804,6 +824,10 @@ def get_doctor_details(doctor_id):
                 'error': 'Doctor not found'
             }), 404
 
+        # Convert doctor to dict and fix image URL
+        doctor_dict = dict(doctor)
+        doctor_dict['profile_image_url'] = get_doctor_image_url(doctor_dict.get('profile_image_url'))
+
         # Get doctor's availability
         cur.execute("""
             SELECT day_of_week, start_time, end_time, is_available
@@ -830,7 +854,7 @@ def get_doctor_details(doctor_id):
 
         return jsonify({
             'success': True,
-            'doctor': dict(doctor),
+            'doctor': doctor_dict,
             'availability': availability,
             'reviews': reviews
         })
@@ -880,14 +904,21 @@ def api_doctors():
         cur.execute(query, params)
         doctors = cur.fetchall()
         
+        # Convert profile image URLs to S3 URLs
+        doctors_list = []
+        for doctor in doctors:
+            doctor_dict = dict(doctor)
+            doctor_dict['profile_image_url'] = get_doctor_image_url(doctor_dict.get('profile_image_url'))
+            doctors_list.append(doctor_dict)
+        
         cur.close()
         conn.close()
         
         # Return JSON response for AJAX
         return jsonify({
             'success': True,
-            'doctors': [dict(doctor) for doctor in doctors],
-            'total': len(doctors)
+            'doctors': doctors_list,
+            'total': len(doctors_list)
         })
         
     except Exception as e:
@@ -1032,19 +1063,24 @@ def get_user_consultations():
         cur.execute(query, params)
         consultations = cur.fetchall()
         
-        # Convert time objects to strings for JSON serialization
+        # Convert time objects to strings and fix image URLs for JSON serialization
+        consultations_list = []
         for consultation in consultations:
-            if consultation['appointment_time']:
-                consultation['appointment_time'] = consultation['appointment_time'].strftime('%H:%M')
-            if consultation['appointment_date']:
-                consultation['appointment_date'] = consultation['appointment_date'].isoformat()
+            consultation_dict = dict(consultation)
+            if consultation_dict['appointment_time']:
+                consultation_dict['appointment_time'] = consultation_dict['appointment_time'].strftime('%H:%M')
+            if consultation_dict['appointment_date']:
+                consultation_dict['appointment_date'] = consultation_dict['appointment_date'].isoformat()
+            # Fix doctor image URL
+            consultation_dict['doctor_image'] = get_doctor_image_url(consultation_dict.get('doctor_image'))
+            consultations_list.append(consultation_dict)
         
         cur.close()
         conn.close()
         
         return jsonify({
             'success': True,
-            'consultations': consultations
+            'consultations': consultations_list
         })
         
     except Exception as e:

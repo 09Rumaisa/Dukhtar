@@ -338,10 +338,19 @@
             
             let html = '';
             consultations.forEach(c => {
-                // Handle doctor image path
-                const imgPath = c.doctor_image 
-                    ? (c.doctor_image.startsWith('/static/') ? c.doctor_image : '/static/doctors_profile/' + c.doctor_image)
-                    : '/static/doctors_profile/d1.png';
+                // Handle doctor image path - check if it's already a full URL (S3) or local filename
+                let imgPath;
+                if (c.doctor_image) {
+                    if (c.doctor_image.startsWith('http')) {
+                        imgPath = c.doctor_image;
+                    } else if (c.doctor_image.startsWith('/static/')) {
+                        imgPath = c.doctor_image;
+                    } else {
+                        imgPath = `https://dukhtar-doctorimages.s3.amazonaws.com/doctors/${c.doctor_image}`;
+                    }
+                } else {
+                    imgPath = 'https://dukhtar-doctorimages.s3.amazonaws.com/doctors/d1.png';
+                }
                 
                 // Format date and time
                 const appointmentDate = new Date(c.appointment_date).toLocaleDateString();
@@ -355,7 +364,7 @@
                 html += `
                 <div class="consultation-card">
                     <div class="consultation-header">
-                        <img src="${imgPath}" alt="Doctor Image" class="doctor-image" onerror="this.src='/static/doctors_profile/d1.png'">
+                        <img src="${imgPath}" alt="Doctor Image" class="doctor-image" onerror="this.src='https://dukhtar-doctorimages.s3.amazonaws.com/doctors/d1.png'">
                         <div class="doctor-info">
                             <h5>${c.doctor_name}</h5>
                             <p class="doctor-specialization">${c.specialization}</p>

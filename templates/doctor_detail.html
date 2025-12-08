@@ -424,9 +424,19 @@
                         const doctor = data.doctor;
                         
                         // Default profile image if none provided
-                       const imgPath = doctor.profile_image_url 
-                    ? (doctor.profile_image_url.startsWith('/static/') ? doctor.profile_image_url : '/static/doctors_profile/' + doctor.profile_image_url)
-                    : '/static/doctors_profile/d1.png';
+                       // Handle profile image path - check if it's already a full URL (S3) or local filename
+                       let imgPath;
+                       if (doctor.profile_image_url) {
+                           if (doctor.profile_image_url.startsWith('http')) {
+                               imgPath = doctor.profile_image_url;
+                           } else if (doctor.profile_image_url.startsWith('/static/')) {
+                               imgPath = doctor.profile_image_url;
+                           } else {
+                               imgPath = `https://dukhtar-doctorimages.s3.amazonaws.com/doctors/${doctor.profile_image_url}`;
+                           }
+                       } else {
+                           imgPath = 'https://dukhtar-doctorimages.s3.amazonaws.com/doctors/d1.png';
+                       }
                         
                         // Generate star rating
                         const rating = doctor.rating || 0;
@@ -435,7 +445,7 @@
                         document.getElementById('doctorDetail').innerHTML = `
                             <div class="doctor-profile">
                                 <div class="profile-header">
-                                    <img src="${imgPath}" alt="${doctor.full_name}" class="profile-image" onerror="this.src='/static/doctors_profile/d1.png'">
+                                    <img src="${imgPath}" alt="${doctor.full_name}" class="profile-image" onerror="this.src='https://dukhtar-doctorimages.s3.amazonaws.com/doctors/d1.png'">
                                     <div class="profile-info">
                                         <h1 class="doctor-name">${doctor.full_name}</h1>
                                         <p class="doctor-specialization">${doctor.specialization}</p>
