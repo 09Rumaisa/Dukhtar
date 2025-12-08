@@ -578,7 +578,7 @@ Helpful Answer:""")
                     pre_pregnancy_bmi, weight_gain, activity_level,
                     dietary_restrictions, medical_conditions, language,
                     article_content, weight_status, recommended_gain,
-                    search_queries, 'completed'
+                    ', '.join(search_queries), 'completed'
                 ))
                 
                 guide_id = cur.fetchone()[0]
@@ -600,8 +600,18 @@ Helpful Answer:""")
         print(f"Error type: {type(e).__name__}")
         import traceback
         traceback.print_exc()
+        
+        # More detailed error message for debugging
+        error_msg = f"An unexpected error occurred: {str(e)}"
+        if "OpenAI" in str(e):
+            error_msg = "OpenAI API error. Please check your API key and try again."
+        elif "Tavily" in str(e):
+            error_msg = "Search service error. Please try again later."
+        elif "database" in str(e).lower() or "postgres" in str(e).lower():
+            error_msg = "Database error. Please try again."
+        
         return render_template('pregnancy_tracker_form.html', 
-                             error="An unexpected error occurred. Please try again or contact support.")
+                             error=error_msg)
 
 
 @app.route('/generate_speech', methods=['POST'])
