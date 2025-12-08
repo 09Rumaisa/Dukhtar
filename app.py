@@ -586,7 +586,7 @@ Helpful Answer:""")
 
 @app.route('/generate_speech', methods=['POST'])
 def generate_speech():
-    """Generate speech audio from text using OpenAI TTS"""
+    """Generate speech audio from text using OpenAI TTS and upload to S3"""
     try:
         data = request.get_json()
         text = data.get('text', '')
@@ -625,38 +625,40 @@ def generate_speech():
             input=cleaned_text
         )
         
-        # Create a unique filename
-        import uuid
-        filename = f"speech_{uuid.uuid4().hex[:8]}.mp3"
-        filepath = os.path.join('static', 'audio', filename)
+        # Get audio content
+        audio_content = response.content
         
-        # Ensure audio directory exists
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        # Upload to S3
+        from aws_s3_utils import get_s3_manager
+        s3 = get_s3_manager()
+        audio_url = s3.upload_audio_file(audio_content)
         
-        # Save the audio file
-        response.stream_to_file(filepath)
+        print(f"✓ Audio uploaded to S3: {audio_url}")
         
-        # Return the audio file URL
+        # Return the S3 URL
         return jsonify({
-            'audio_url': f'/static/audio/{filename}',
+            'audio_url': audio_url,
             'message': 'Speech generated successfully'
         })
         
     except Exception as e:
         print(f"Error generating speech: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': 'Failed to generate speech'}), 500
 
 @app.route('/cleanup_audio', methods=['POST'])
 def cleanup_audio():
-    """Clean up temporary audio files"""
+    """Clean up temporary audio files from S3"""
     try:
         data = request.get_json()
-        filename = data.get('filename', '')
+        audio_url = data.get('audio_url', '') or data.get('filename', '')
         
-        if filename:
-            filepath = os.path.join('static', 'audio', filename)
-            if os.path.exists(filepath):
-                os.remove(filepath)
+        if audio_url:
+            from aws_s3_utils import get_s3_manager
+            s3 = get_s3_manager()
+            s3.delete_audio_file(audio_url)
+            print(f"✓ Audio deleted from S3: {audio_url}")
         
         return jsonify({'message': 'Audio cleaned up successfully'})
     
@@ -1601,7 +1603,18 @@ def get_pregnancy_guide_history():
 
 if __name__ == '__main__':
     print("Starting Dukhtar AI Assistant with Authentication...")
-    print("Flask app will be available at http://localhost:5000")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    
+    # Get port from environment variable (for production) or use 5000 (for local)
+    port = int(os.getenv('PORT', 5000))
+    
+    # Check if running in production
+    is_production = os.getenv('FLASK_ENV') == 'production'
+    
+    if is_production:
+        print(f"Running in PRODUCTION mode on port {port}")
+        app.run(debug=False, host='0.0.0.0', port=port)
+    else:
+        print(f"Running in DEVELOPMENT mode at http://localhost:{port}")
+        app.run(debug=True, host='0.0.0.0', port=port)
     
 

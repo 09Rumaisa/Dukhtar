@@ -648,14 +648,13 @@
             
             // Clean up audio file
             if (currentAudioUrl) {
-                const filename = currentAudioUrl.split('/').pop();
                 fetch('/cleanup_audio', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        filename: filename
+                        audio_url: currentAudioUrl
                     })
                 })
                 .catch(error => console.error('Error cleaning up audio:', error));
@@ -667,9 +666,8 @@
         // Clean up audio when page is closed
         window.addEventListener('beforeunload', function() {
             if (currentAudioUrl) {
-                const filename = currentAudioUrl.split('/').pop();
                 navigator.sendBeacon('/cleanup_audio', JSON.stringify({
-                    filename: filename
+                    audio_url: currentAudioUrl
                 }));
             }
         });

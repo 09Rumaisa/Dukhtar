@@ -1,1 +1,74 @@
-/.env
+# Environment variables (NEVER commit these!)
+.env
+.env.local
+.env.*.local
+
+# Database files
+database.ini
+*.db
+*.sqlite
+*.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# ChromaDB / Vector Store
+pregnancy_db/
+chroma_db/
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Test files (if you create any)
+test_*.py
+*_test.py
+
+# Local images (now in S3)
+static/doctors_profile/*.jpg
+static/doctors_profile/*.png
+static/audio/*.mp3
+
+# Backup files
+*.bak
+*.backup

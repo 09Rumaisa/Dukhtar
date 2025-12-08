@@ -261,10 +261,13 @@ def transcribe_audio(audio_base64: str) -> str:
 
 @tool
 def generate_audio_response(text: str, language: str = "en") -> str:
-    """Generate audio response using TTS."""
+    """Generate audio response using TTS and upload to S3."""
     try:
         print(f"Generating audio for text: {text[:100]}...")
         print(f"Language: {language}")
+        
+        # Import S3 manager
+        from aws_s3_utils import get_s3_manager
         
         # Detect language if not provided
         if language == "auto":
@@ -277,32 +280,15 @@ def generate_audio_response(text: str, language: str = "en") -> str:
             print("Using gTTS for Urdu/Hindi...")
             tts = gTTS(text, lang='ur')
             
-            # Create temporary file with proper cleanup
-            tmp_file = None
-            try:
-                tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3')
-                tmp_file_path = tmp_file.name
-                tmp_file.close()  # Close the file handle
+            # Save to BytesIO instead of file
+            from io import BytesIO
+            audio_bytes = BytesIO()
+            tts.write_to_fp(audio_bytes)
+            audio_bytes.seek(0)
+            audio_content = audio_bytes.read()
+            
+            print(f"gTTS audio generated: {len(audio_content)} bytes")
                 
-                # Save the TTS audio
-                tts.save(tmp_file_path)
-                
-                # Read the audio content
-                with open(tmp_file_path, "rb") as f:
-                    audio_content = f.read()
-                
-                print(f"gTTS audio generated: {len(audio_content)} bytes")
-                
-            except Exception as e:
-                print(f"gTTS error: {str(e)}")
-                raise e
-            finally:
-                # Clean up the temporary file
-                if tmp_file and os.path.exists(tmp_file_path):
-                    try:
-                        os.unlink(tmp_file_path)
-                    except Exception as e:
-                        print(f"Warning: Could not delete temp file {tmp_file_path}: {e}")
         else:
             # Use OpenAI TTS for English
             print("Using OpenAI TTS for English...")
@@ -317,13 +303,18 @@ def generate_audio_response(text: str, language: str = "en") -> str:
             audio_content = speech.content
             print(f"OpenAI TTS audio generated: {len(audio_content)} bytes")
         
-        # Return base64 encoded audio
-        base64_audio = base64.b64encode(audio_content).decode()
-        print(f"Base64 audio length: {len(base64_audio)}")
-        return base64_audio
+        # Upload to S3 and get URL
+        s3 = get_s3_manager()
+        audio_url = s3.upload_audio_file(audio_content)
+        print(f"Audio uploaded to S3: {audio_url}")
+        
+        # Return S3 URL instead of base64
+        return audio_url
         
     except Exception as e:
         print(f"Error generating audio: {str(e)}")
+        import traceback
+        traceback.print_exc()
         # Return empty string instead of error message to avoid confusion
         return ""
 
