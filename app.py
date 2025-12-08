@@ -400,10 +400,13 @@ def pregnancy_tracker():
             )
             
             print("Creating vector store...")
+            # Use in-memory vector store to avoid chromadb version issues
+            import uuid
+            collection_name = f"pregnancy_{uuid.uuid4().hex[:8]}"
             vectorstore = Chroma.from_texts(
                 texts=splits,
                 embedding=embeddings,
-                persist_directory="./pregnancy_db"
+                collection_name=collection_name
             )
             print("✓ Vector store created")
             
@@ -510,11 +513,12 @@ Helpful Answer:""")
         
         # Clean up the vector store
         try:
-            vectorstore.delete_collection()
-            print("✓ Vector store cleaned up")
+            if hasattr(vectorstore, '_client'):
+                vectorstore._client.delete_collection(vectorstore._collection.name)
+                print("✓ Vector store cleaned up")
         except Exception as e:
             print(f"⚠ Error cleaning up vector store: {e}")
-            # Continue anyway
+            # Continue anyway - in-memory store will be garbage collected
         
         # Additional personalization based on BMI and weight gain
         if pre_pregnancy_bmi < 18.5:
