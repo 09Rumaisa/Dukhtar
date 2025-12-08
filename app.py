@@ -572,13 +572,22 @@ Helpful Answer:""")
                     RETURNING guide_id
                 """
                 
+                # Convert search queries list to string
+                search_queries_str = ', '.join([
+                    f"pregnancy week {pregnancy_week} baby development",
+                    f"pregnancy trimester {trimester} diet nutrition",
+                    f"pregnancy week {pregnancy_week} exercises",
+                    f"pregnancy weight gain week {pregnancy_week}",
+                    f"pregnancy week {pregnancy_week} symptoms"
+                ])
+                
                 cur.execute(insert_query, (
                     user_id, tracking_id, pregnancy_week, trimester,
                     current_weight, pre_pregnancy_weight, height, age,
                     pre_pregnancy_bmi, weight_gain, activity_level,
                     dietary_restrictions, medical_conditions, language,
                     article_content, weight_status, recommended_gain,
-                    ', '.join(search_queries), 'completed'
+                    search_queries_str, 'completed'
                 ))
                 
                 guide_id = cur.fetchone()[0]
@@ -590,6 +599,10 @@ Helpful Answer:""")
                 print(f"✓ Pregnancy guide saved to database with ID: {guide_id}")
         except Exception as e:
             print(f"ERROR saving to database: {e}")
+            import traceback
+            traceback.print_exc()
+            # Continue to render results even if database save fails
+        
         print("✓ Rendering results template...")
         return render_template('pregnancy_results.html', 
                              article=article_content, 
