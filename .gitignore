@@ -72,3 +72,4 @@ static/audio/*.mp3
 # Backup files
 *.bak
 *.backup
+FIXES_SUMMARY.md
