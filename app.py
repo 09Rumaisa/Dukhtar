@@ -7,13 +7,14 @@ import psycopg2.extras
 import uuid
 from datetime import datetime, timedelta
 import os
-from langchain.document_loaders import WebBaseLoader
+# Updated LangChain imports - using correct modern imports
+from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.tools.tavily_search import TavilySearchResults
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI  # Updated import
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains import RetrievalQA
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma  # Updated import
 from langchain_openai import OpenAIEmbeddings
 
 # Import the DukhtarAgent from main.py
@@ -228,8 +229,9 @@ def pregnancy_guides_dashboard():
     return render_template('pregnancy_guides_dashboard.html')
 
 @app.route('/pregnancy_tracker', methods=['GET', 'POST'])
+@login_required
 def pregnancy_tracker():
-    """Pregnancy tracker page - allows users to track pregnancy progress."""
+    """Pregnancy tracker page - allows users to track pregnancy progress. Requires login."""
     
     print(f"Request method: {request.method}")  # Debug log
     
@@ -345,9 +347,10 @@ def pregnancy_tracker():
                 print(f"Executing search {i+1}/{len(search_queries)}: {query}")
                 results = tavily_tool.run(query)
                 if results:
-                    all_search_results.extend(results)
+                    # Tavily returns a string, not a list - append it directly
+                    all_search_results.append(results)
                     successful_searches += 1
-                    print(f"✓ Search {i+1} successful - got {len(results)} results")
+                    print(f"✓ Search {i+1} successful")
                 else:
                     print(f"⚠ Search {i+1} returned no results")
             except Exception as e:
@@ -356,8 +359,8 @@ def pregnancy_tracker():
         
         print(f"✓ Completed {successful_searches}/{len(search_queries)} searches successfully")
         
-        # Web scraping with better error handling
-        url = f"https://www.whattoexpect.com//pregnancy//week-by-week//week-{pregnancy_week}/"
+        # Web scraping with better error handling - FIX URL FORMAT
+        url = f"https://www.whattoexpect.com/pregnancy/week-by-week/week-{pregnancy_week}/"
         print(f"Attempting to load: {url}")
         
         web_data = []
@@ -572,14 +575,14 @@ Helpful Answer:""")
                     RETURNING guide_id
                 """
                 
-                # Convert search queries list to string
-                search_queries_str = ', '.join([
+                # Create search queries array for PostgreSQL
+                search_queries_array = [
                     f"pregnancy week {pregnancy_week} baby development",
                     f"pregnancy trimester {trimester} diet nutrition",
                     f"pregnancy week {pregnancy_week} exercises",
                     f"pregnancy weight gain week {pregnancy_week}",
                     f"pregnancy week {pregnancy_week} symptoms"
-                ])
+                ]
                 
                 cur.execute(insert_query, (
                     user_id, tracking_id, pregnancy_week, trimester,
@@ -587,7 +590,7 @@ Helpful Answer:""")
                     pre_pregnancy_bmi, weight_gain, activity_level,
                     dietary_restrictions, medical_conditions, language,
                     article_content, weight_status, recommended_gain,
-                    search_queries_str, 'completed'
+                    search_queries_array, 'completed'
                 ))
                 
                 guide_id = cur.fetchone()[0]
