@@ -229,9 +229,8 @@ def pregnancy_guides_dashboard():
     return render_template('pregnancy_guides_dashboard.html')
 
 @app.route('/pregnancy_tracker', methods=['GET', 'POST'])
-@login_required
 def pregnancy_tracker():
-    """Pregnancy tracker page - allows users to track pregnancy progress. Requires login."""
+    """Pregnancy tracker page - allows users to track pregnancy progress."""
     
     print(f"Request method: {request.method}")  # Debug log
     
@@ -505,11 +504,14 @@ Helpful Answer:""")
             
             if not article_content or len(article_content) < 100:
                 print("⚠ AI response seems too short, might be an error")
+                article_content = "Unable to generate full guide. Please try again."
                 
         except Exception as e:
             print(f"ERROR generating AI response: {e}")
+            import traceback
+            traceback.print_exc()
             return render_template('pregnancy_tracker_form.html', 
-                                 error="Error generating personalized guide. Please try again.")
+                                 error=f"Error generating personalized guide: {str(e)}")
         
         # Clean up the vector store
         try:
@@ -547,65 +549,75 @@ Helpful Answer:""")
         print("✓ Additional info prepared")
         
 
-        # Save to database and increment counter
+        # Save to database (optional - only if user is logged in)
         try:
-            conn = get_connection()
-            if conn:
-                cur = conn.cursor()
-                
-                # Get tracking_id if exists (you may need to create this logic)
-                tracking_id = None
-                user_id= session.get('user_id')
-                if user_id:
-                    cur.execute("""
-                        SELECT tracking_id FROM pregnancy_tracking 
-                        WHERE user_id = %s AND is_active = TRUE 
-                        ORDER BY created_at DESC LIMIT 1
-                    """, (user_id,))
-                    tracking_result = cur.fetchone()
-                    if tracking_result:
-                        tracking_id = tracking_result[0]
-                
-                # Insert pregnancy guide data
-                insert_query = """
-                    INSERT INTO pregnancy_guides (
-                        user_id, tracking_id, pregnancy_week, trimester, 
-                        current_weight, pre_pregnancy_weight, height_cm, age,
-                        pre_pregnancy_bmi, weight_gain_kg, activity_level,
+            user_id = session.get('user_id')
+            if user_id:
+                conn = get_connection()
+                if conn:
+                    cur = conn.cursor()
+                    
+                    # Get tracking_id if exists
+                    tracking_id = None
+                    try:
+                        cur.execute("""
+                            SELECT tracking_id FROM pregnancy_tracking 
+                            WHERE user_id = %s AND is_active = TRUE 
+                            ORDER BY created_at DESC LIMIT 1
+                        """, (user_id,))
+                        tracking_result = cur.fetchone()
+                        if tracking_result:
+                            tracking_id = tracking_result[0]
+                    except:
+                        pass
+                    
+                    # Insert pregnancy guide data
+                    insert_query = """
+                        INSERT INTO pregnancy_guides (
+                            user_id, tracking_id, pregnancy_week, trimester, 
+                            current_weight, pre_pregnancy_weight, height_cm, age,
+                            pre_pregnancy_bmi, weight_gain_kg, activity_level,
+                            dietary_restrictions, medical_conditions, language,
+                            generated_guide, weight_status, recommended_weight_gain,
+                            search_queries_used, generation_status
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        RETURNING guide_id
+                    """
+                    
+                    # Create search queries array for PostgreSQL
+                    search_queries_array = [
+                        f"pregnancy week {pregnancy_week} baby development",
+                        f"pregnancy trimester {trimester} diet nutrition",
+                        f"pregnancy week {pregnancy_week} exercises",
+                        f"pregnancy weight gain week {pregnancy_week}",
+                        f"pregnancy week {pregnancy_week} symptoms"
+                    ]
+                    
+                    cur.execute(insert_query, (
+                        user_id, tracking_id, pregnancy_week, trimester,
+                        current_weight, pre_pregnancy_weight, height, age,
+                        pre_pregnancy_bmi, weight_gain, activity_level,
                         dietary_restrictions, medical_conditions, language,
-                        generated_guide, weight_status, recommended_weight_gain,
-                        search_queries_used, generation_status
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    RETURNING guide_id
-                """
-                
-                # Create search queries array for PostgreSQL
-                search_queries_array = [
-                    f"pregnancy week {pregnancy_week} baby development",
-                    f"pregnancy trimester {trimester} diet nutrition",
-                    f"pregnancy week {pregnancy_week} exercises",
-                    f"pregnancy weight gain week {pregnancy_week}",
-                    f"pregnancy week {pregnancy_week} symptoms"
-                ]
-                
-                cur.execute(insert_query, (
-                    user_id, tracking_id, pregnancy_week, trimester,
-                    current_weight, pre_pregnancy_weight, height, age,
-                    pre_pregnancy_bmi, weight_gain, activity_level,
-                    dietary_restrictions, medical_conditions, language,
-                    article_content, weight_status, recommended_gain,
-                    search_queries_array, 'completed'
-                ))
-                
-                guide_id = cur.fetchone()[0]
-                conn.commit()
-                
-                # Increment endpoint hit counter
-                increment_endpoint_counter('pregnancy_guide_generation')
-                
-                print(f"✓ Pregnancy guide saved to database with ID: {guide_id}")
+                        article_content, weight_status, recommended_gain,
+                        search_queries_array, 'completed'
+                    ))
+                    
+                    guide_id = cur.fetchone()[0]
+                    conn.commit()
+                    cur.close()
+                    conn.close()
+                    
+                    # Increment endpoint hit counter
+                    try:
+                        increment_endpoint_counter('pregnancy_guide_generation')
+                    except:
+                        pass
+                    
+                    print(f"✓ Pregnancy guide saved to database with ID: {guide_id}")
+            else:
+                print("⚠ User not logged in - skipping database save")
         except Exception as e:
-            print(f"ERROR saving to database: {e}")
+            print(f"⚠ ERROR saving to database: {e}")
             import traceback
             traceback.print_exc()
             # Continue to render results even if database save fails
