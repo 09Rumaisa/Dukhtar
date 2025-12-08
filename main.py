@@ -61,9 +61,9 @@ You can also answer general FAQs about women's health during pregnancy.
 
 Key guidelines:
 - Always be supportive, non-judgmental, and use simple, short language
-- If the user speaks Urdu, reply in Urdu (اردو). If they speak English, reply in English
-- Default to Urdu for South Asian users unless they explicitly use English
-- If unsure about language, gently ask a follow-up question
+- IMPORTANT: Reply in the SAME language the user uses. If they speak English, reply in English. If they speak Urdu, reply in Urdu (اردو)
+- Match the user's language exactly - do not switch languages unless they do
+- If unsure about language, use English as default
 - If the user asks about topics other than pregnancy or family planning, politely redirect: "I am here to help with pregnancy-related questions. Please ask me about that."
 - Use any search context provided to give accurate, up-to-date information
 - If analyzing medical images, provide clear, simple explanations
@@ -234,12 +234,12 @@ def transcribe_audio(audio_base64: str) -> str:
             from openai import OpenAI
             client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
             
-            # Transcribe audio with Urdu language specified
+            # Transcribe audio - let Whisper auto-detect language
             with open(temp_audio_path, "rb") as audio_file:
                 transcript = client.audio.transcriptions.create(
                     file=audio_file,
-                    model="whisper-1",
-                    language="ur"  # Explicitly set to Urdu
+                    model="whisper-1"
+                    # No language parameter - auto-detect English, Urdu, Hindi, etc.
                 )
             
             print(f"Transcription result: {transcript.text}")
@@ -468,8 +468,31 @@ def respond_node(state: DukhtarState) -> DukhtarState:
         api_key=os.getenv("OPENAI_API_KEY")
     )
     
+    # Detect user's language from their last message
+    user_language = "en"
+    messages_list = state.get("messages", [])
+    if messages_list:
+        last_user_msg = None
+        for msg in reversed(messages_list):
+            if isinstance(msg, HumanMessage):
+                last_user_msg = msg
+                break
+        
+        if last_user_msg:
+            try:
+                user_language = detect(last_user_msg.content)
+                print(f"Detected user language: {user_language}")
+            except:
+                user_language = "en"
+    
     # Build context
     context_parts = []
+    
+    # Add language instruction
+    if user_language == "ur" or user_language == "hi":
+        context_parts.append("IMPORTANT: The user is speaking Urdu/Hindi. You MUST respond in Urdu (اردو).")
+    else:
+        context_parts.append("IMPORTANT: The user is speaking English. You MUST respond in English.")
     
     # Add search context if available
     if state.get("search_context"):
@@ -487,18 +510,14 @@ def respond_node(state: DukhtarState) -> DukhtarState:
     
     # Add context if available
     if context_parts:
-        context_message = HumanMessage(content=f"Additional context:\n\n{chr(10).join(context_parts)}")
+        context_message = SystemMessage(content=f"Additional context:\n\n{chr(10).join(context_parts)}")
         messages.append(context_message)
     
     # Generate response
     response = llm.invoke(messages)
     
-    # Detect language
-    try:
-        detected_lang = detect(response.content)
-        state["current_language"] = detected_lang
-    except:
-        state["current_language"] = "en"
+    # Store detected language
+    state["current_language"] = user_language
     
     # Add response to messages
     state["messages"].append(AIMessage(content=response.content))

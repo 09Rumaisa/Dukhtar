@@ -990,14 +990,25 @@
                             if (result.audio_response && result.audio_response.length > 0) {
                                 // Play audio response
                                 try {
-                                    const audioBytes = atob(result.audio_response);
-                                    const audioArray = new Uint8Array(audioBytes.length);
-                                    for (let i = 0; i < audioBytes.length; i++) {
-                                        audioArray[i] = audioBytes.charCodeAt(i);
-                                    }
+                                    let audioUrl;
                                     
-                                    const audioBlob = new Blob([audioArray], { type: 'audio/mpeg' });
-                                    const audioUrl = URL.createObjectURL(audioBlob);
+                                    // Check if it's an S3 URL or base64 data
+                                    if (result.audio_response.startsWith('http')) {
+                                        // It's an S3 URL, use directly
+                                        audioUrl = result.audio_response;
+                                        console.log('Using S3 audio URL:', audioUrl);
+                                    } else {
+                                        // It's base64 data, convert to blob
+                                        const audioBytes = atob(result.audio_response);
+                                        const audioArray = new Uint8Array(audioBytes.length);
+                                        for (let i = 0; i < audioBytes.length; i++) {
+                                            audioArray[i] = audioBytes.charCodeAt(i);
+                                        }
+                                        
+                                        const audioBlob = new Blob([audioArray], { type: 'audio/mpeg' });
+                                        audioUrl = URL.createObjectURL(audioBlob);
+                                        console.log('Using base64 audio data');
+                                    }
                                     
                                     // Create visible audio player
                                     const audioPlayer = document.createElement('audio');
