@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Analytics - Dukhtar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        }
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #16213e;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            border-left: 4px solid #667eea;
+        }
+        .stat-card.success {
+            border-left-color: #4caf50;
+        }
+        .stat-card.warning {
+            border-left-color: #ff9800;
+        }
+        .stat-card.error {
+            border-left-color: #f44336;
+        }
+        .stat-number {
+            font-size: 42px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+        .stat-label {
+            color: #aaa;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .section {
+            background: #16213e;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #2a2a3e;
+        }
+        th {
+            background: #0f1419;
+            color: #667eea;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+        tr:hover {
+            background: #1a1a2e;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge.high {
+            background: #4caf50;
+            color: white;
+        }
+        .badge.medium {
+            background: #ff9800;
+            color: white;
+        }
+        .badge.low {
+            background: #f44336;
+            color: white;
+        }
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .refresh-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 18px;
+        }
+        .timestamp {
+            color: #888;
+            font-size: 12px;
+        }
+        .chart-container {
+            margin-top: 20px;
+            padding: 20px;
+            background: #0f1419;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Developer Analytics Dashboard</h1>
+            <p>System-wide monitoring and statistics</p>
+            <button class="refresh-btn" onclick="loadAllData()" style="margin-top: 15px;">🔄 Refresh Data</button>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Pregnancy Guides Generated</div>
+                <div class="stat-number" id="totalGuides">-</div>
+                <div class="timestamp" id="guideTimestamp"></div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-label">Successful Generations</div>
+                <div class="stat-number" id="successfulGuides">-</div>
+            </div>
+            <div class="stat-card error">
+                <div class="stat-label">Failed Generations</div>
+                <div class="stat-number" id="failedGuides">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Unique Users</div>
+                <div class="stat-number" id="uniqueUsers">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Urdu Guides</div>
+                <div class="stat-number" id="urduGuides">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">English Guides</div>
+                <div class="stat-number" id="englishGuides">-</div>
+            </div>
+        </div>
+
+        <!-- Endpoint Analytics -->
+        <div class="section">
+            <h2>📊 Endpoint Hit Counts</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Total Hits</th>
+                        <th>Last Hit</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="endpointTable">
+                    <tr><td colspan="4" class="loading">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Daily Statistics -->
+        <div class="section">
+            <h2>📅 Daily Guide Generation (Last 30 Days)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Guides Generated</th>
+                        <th>Trend</th>
+                    </tr>
+                </thead>
+                <tbody id="dailyStatsTable">
+                    <tr><td colspan="3" class="loading">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- System Info -->
+        <div class="section">
+            <h2>ℹ️ System Information</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <div>
+                    <strong>Total Registered Users:</strong> <span id="totalUsers">-</span>
+                </div>
+                <div>
+                    <strong>Average Pregnancy Week:</strong> <span id="avgWeek">-</span>
+                </div>
+                <div>
+                    <strong>Last Updated:</strong> <span id="lastUpdated">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadAllData() {
+            try {
+                const response = await fetch('/api/admin/analytics');
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update key metrics
+                    const guideStats = data.pregnancy_guide_stats;
+                    document.getElementById('totalGuides').textContent = guideStats.total_guides || 0;
+                    document.getElementById('successfulGuides').textContent = guideStats.successful_guides || 0;
+                    document.getElementById('failedGuides').textContent = guideStats.failed_guides || 0;
+                    document.getElementById('uniqueUsers').textContent = guideStats.unique_users || 0;
+                    document.getElementById('urduGuides').textContent = guideStats.urdu_guides || 0;
+                    document.getElementById('englishGuides').textContent = guideStats.english_guides || 0;
+                    
+                    // Update endpoint table
+                    const endpointTable = document.getElementById('endpointTable');
+                    if (data.endpoint_analytics.length > 0) {
+                        endpointTable.innerHTML = data.endpoint_analytics.map(endpoint => {
+                            let badge = 'low';
+                            if (endpoint.hit_count > 100) badge = 'high';
+                            else if (endpoint.hit_count > 50) badge = 'medium';
+                            
+                            return `
+                                <tr>
+                                    <td><strong>${endpoint.endpoint_name}</strong></td>
+                                    <td><span class="badge ${badge}">${endpoint.hit_count} hits</span></td>
+                                    <td>${new Date(endpoint.last_hit).toLocaleString()}</td>
+                                    <td>✅ Active</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    } else {
+                        endpointTable.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #888;">No endpoint data available</td></tr>';
+                    }
+                    
+                    // Update daily stats
+                    const dailyTable = document.getElementById('dailyStatsTable');
+                    if (data.daily_guide_generation.length > 0) {
+                        dailyTable.innerHTML = data.daily_guide_generation.map((day, index) => {
+                            const prevCount = index < data.daily_guide_generation.length - 1 
+                                ? data.daily_guide_generation[index + 1].count 
+                                : day.count;
+                            const trend = day.count > prevCount ? '📈' : day.count < prevCount ? '📉' : '➡️';
+                            
+                            return `
+                                <tr>
+                                    <td>${new Date(day.date).toLocaleDateString()}</td>
+                                    <td><strong>${day.count}</strong></td>
+                                    <td>${trend}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    } else {
+                        dailyTable.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #888;">No daily data available</td></tr>';
+                    }
+                    
+                    // Update system info
+                    document.getElementById('totalUsers').textContent = data.user_stats.total_users || 0;
+                    document.getElementById('avgWeek').textContent = 
+                        guideStats.avg_pregnancy_week ? Math.round(guideStats.avg_pregnancy_week) : 'N/A';
+                    document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+                    
+                } else {
+                    console.error('Error loading analytics:', data.error);
+                    alert('Error loading analytics data');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load analytics data');
+            }
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadAllData, 30000);
+        
+        // Load data on page load
+        loadAllData();
+    </script>
+</body>
+</html>

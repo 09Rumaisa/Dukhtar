@@ -61,7 +61,8 @@ You can also answer general FAQs about women's health during pregnancy.
 
 Key guidelines:
 - Always be supportive, non-judgmental, and use simple, short language
-- If the user speaks Urdu, reply in Urdu. If they speak English, reply in English
+- If the user speaks Urdu, reply in Urdu (اردو). If they speak English, reply in English
+- Default to Urdu for South Asian users unless they explicitly use English
 - If unsure about language, gently ask a follow-up question
 - If the user asks about topics other than pregnancy or family planning, politely redirect: "I am here to help with pregnancy-related questions. Please ask me about that."
 - Use any search context provided to give accurate, up-to-date information
@@ -233,12 +234,12 @@ def transcribe_audio(audio_base64: str) -> str:
             from openai import OpenAI
             client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
             
-            # Transcribe audio with auto language detection
+            # Transcribe audio with Urdu language specified
             with open(temp_audio_path, "rb") as audio_file:
                 transcript = client.audio.transcriptions.create(
                     file=audio_file,
-                    model="whisper-1"
-                    # No language parameter = auto-detect
+                    model="whisper-1",
+                    language="ur"  # Explicitly set to Urdu
                 )
             
             print(f"Transcription result: {transcript.text}")

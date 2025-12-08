@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pregnancy Guides Dashboard - Dukhtar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        .history-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .guide-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .guide-item:last-child {
+            border-bottom: none;
+        }
+        .guide-info {
+            flex: 1;
+        }
+        .guide-week {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 18px;
+        }
+        .guide-date {
+            color: #999;
+            font-size: 12px;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #5568d3;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Pregnancy Guides Dashboard</h1>
+            <p>Track your pregnancy journey</p>
+            <a href="/pregnancy_tracker" class="btn" style="margin-top: 10px;">Generate New Guide</a>
+            <a href="/" class="btn" style="margin-top: 10px; background: #764ba2;">Back to Home</a>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Guides Generated</div>
+                <div class="stat-number" id="totalGuides">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Current Week</div>
+                <div class="stat-number" id="currentWeek">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">System Total</div>
+                <div class="stat-number" id="systemTotal">-</div>
+            </div>
+        </div>
+
+        <div class="history-section">
+            <h2>Your Guide History</h2>
+            <div id="guideHistory" class="loading">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        // Fetch statistics
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/pregnancy_guides/stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('totalGuides').textContent = data.user_stats.total_guides;
+                    document.getElementById('systemTotal').textContent = data.system_stats.total_system_guides;
+                    
+                    // Get most recent week
+                    if (data.user_stats.recent_guides.length > 0) {
+                        document.getElementById('currentWeek').textContent = 
+                            data.user_stats.recent_guides[0].pregnancy_week;
+                    } else {
+                        document.getElementById('currentWeek').textContent = 'N/A';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Fetch guide history
+        async function loadHistory() {
+            try {
+                const response = await fetch('/api/pregnancy_guides/history');
+                const data = await response.json();
+                
+                const historyDiv = document.getElementById('guideHistory');
+                
+                if (data.success && data.guides.length > 0) {
+                    historyDiv.innerHTML = data.guides.map(guide => `
+                        <div class="guide-item">
+                            <div class="guide-info">
+                                <div class="guide-week">Week ${guide.pregnancy_week} - Trimester ${guide.trimester}</div>
+                                <div class="guide-date">
+                                    Generated: ${new Date(guide.created_at).toLocaleDateString()} | 
+                                    Weight: ${guide.current_weight}kg (${guide.weight_gain_kg > 0 ? '+' : ''}${guide.weight_gain_kg}kg) | 
+                                    Language: ${guide.language}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    historyDiv.innerHTML = '<p style="text-align: center; color: #999;">No guides generated yet. Create your first guide!</p>';
+                }
+            } catch (error) {
+                console.error('Error loading history:', error);
+                document.getElementById('guideHistory').innerHTML = 
+                    '<p style="text-align: center; color: red;">Error loading history</p>';
+            }
+        }
+
+        // Load data on page load
+        loadStats();
+        loadHistory();
+    </script>
+</body>
+</html>

@@ -204,6 +204,12 @@ def export_history():
         return jsonify({"messages": history})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+@app.route('/pregnancy_guides/dashboard')
+@login_required
+def pregnancy_guides_dashboard():
+    """Dashboard to view pregnancy guide statistics"""
+    return render_template('pregnancy_guides_dashboard.html')
+
 @app.route('/pregnancy_tracker', methods=['GET', 'POST'])
 def pregnancy_tracker():
     """Pregnancy tracker page - allows users to track pregnancy progress."""
@@ -514,7 +520,7 @@ Helpful Answer:""")
         print("✓ Additional info prepared")
         
 
-        # Save to database
+        # Save to database and increment counter
         try:
             conn = get_connection()
             if conn:
@@ -557,6 +563,9 @@ Helpful Answer:""")
                 
                 guide_id = cur.fetchone()[0]
                 conn.commit()
+                
+                # Increment endpoint hit counter
+                increment_endpoint_counter('pregnancy_guide_generation')
                 
                 print(f"✓ Pregnancy guide saved to database with ID: {guide_id}")
         except Exception as e:
@@ -1379,6 +1388,212 @@ def submit_review(doctor_id):
             'error': str(e)
         }), 500
 
+
+# ========================================
+# ENDPOINT TRACKING & ANALYTICS
+# ========================================
+
+def increment_endpoint_counter(endpoint_name):
+    """Increment counter for endpoint hits"""
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        
+        # Insert or update counter
+        cur.execute("""
+            INSERT INTO endpoint_analytics (endpoint_name, hit_count, last_hit)
+            VALUES (%s, 1, NOW())
+            ON CONFLICT (endpoint_name) 
+            DO UPDATE SET 
+                hit_count = endpoint_analytics.hit_count + 1,
+                last_hit = NOW()
+        """, (endpoint_name,))
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"Error incrementing endpoint counter: {e}")
+
+@app.route('/api/admin/analytics', methods=['GET'])
+def get_admin_analytics():
+    """Get system-wide analytics for developers/admins"""
+    try:
+        conn = get_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # Get endpoint hit counts
+        cur.execute("""
+            SELECT endpoint_name, hit_count, last_hit, created_at
+            FROM endpoint_analytics
+            ORDER BY hit_count DESC
+        """)
+        endpoint_stats = cur.fetchall()
+        
+        # Get pregnancy guide statistics
+        cur.execute("""
+            SELECT 
+                COUNT(*) as total_guides,
+                COUNT(DISTINCT user_id) as unique_users,
+                COUNT(CASE WHEN generation_status = 'completed' THEN 1 END) as successful_guides,
+                COUNT(CASE WHEN generation_status = 'failed' THEN 1 END) as failed_guides,
+                AVG(pregnancy_week) as avg_pregnancy_week,
+                COUNT(CASE WHEN language = 'urdu' THEN 1 END) as urdu_guides,
+                COUNT(CASE WHEN language = 'english' THEN 1 END) as english_guides
+            FROM pregnancy_guides
+        """)
+        guide_stats = cur.fetchone()
+        
+        # Get guides per day (last 30 days)
+        cur.execute("""
+            SELECT 
+                DATE(created_at) as date,
+                COUNT(*) as count
+            FROM pregnancy_guides
+            WHERE created_at >= NOW() - INTERVAL '30 days'
+            GROUP BY DATE(created_at)
+            ORDER BY date DESC
+        """)
+        daily_stats = cur.fetchall()
+        
+        # Get user activity
+        cur.execute("""
+            SELECT 
+                COUNT(DISTINCT user_id) as total_users,
+                COUNT(*) as total_logins
+            FROM users
+        """)
+        user_stats = cur.fetchone()
+        
+        cur.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'endpoint_analytics': [dict(e) for e in endpoint_stats],
+            'pregnancy_guide_stats': dict(guide_stats),
+            'daily_guide_generation': [dict(d) for d in daily_stats],
+            'user_stats': dict(user_stats)
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/admin/analytics')
+def admin_analytics_dashboard():
+    """Admin dashboard for system analytics"""
+    return render_template('admin_analytics.html')
+
+# ========================================
+# PREGNANCY GUIDE STATISTICS
+# ========================================
+
+@app.route('/api/pregnancy_guides/stats', methods=['GET'])
+@login_required
+def get_pregnancy_guide_stats():
+    """Get statistics about generated pregnancy guides"""
+    try:
+        user_id = session.get('user_id')
+        
+        conn = get_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # Total guides generated for this user
+        cur.execute("""
+            SELECT COUNT(*) as total_guides
+            FROM pregnancy_guides
+            WHERE user_id = %s
+        """, (user_id,))
+        user_stats = cur.fetchone()
+        
+        # Guides by week
+        cur.execute("""
+            SELECT pregnancy_week, COUNT(*) as count
+            FROM pregnancy_guides
+            WHERE user_id = %s
+            GROUP BY pregnancy_week
+            ORDER BY pregnancy_week
+        """, (user_id,))
+        guides_by_week = cur.fetchall()
+        
+        # Recent guides
+        cur.execute("""
+            SELECT guide_id, pregnancy_week, trimester, created_at, language
+            FROM pregnancy_guides
+            WHERE user_id = %s
+            ORDER BY created_at DESC
+            LIMIT 10
+        """, (user_id,))
+        recent_guides = cur.fetchall()
+        
+        # Overall system stats (all users)
+        cur.execute("""
+            SELECT 
+                COUNT(*) as total_system_guides,
+                COUNT(DISTINCT user_id) as total_users,
+                AVG(pregnancy_week) as avg_week
+            FROM pregnancy_guides
+        """)
+        system_stats = cur.fetchone()
+        
+        cur.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'user_stats': {
+                'total_guides': user_stats['total_guides'],
+                'guides_by_week': [dict(g) for g in guides_by_week],
+                'recent_guides': [dict(g) for g in recent_guides]
+            },
+            'system_stats': dict(system_stats)
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/pregnancy_guides/history', methods=['GET'])
+@login_required
+def get_pregnancy_guide_history():
+    """Get user's pregnancy guide history"""
+    try:
+        user_id = session.get('user_id')
+        
+        conn = get_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        cur.execute("""
+            SELECT 
+                guide_id, pregnancy_week, trimester, 
+                current_weight, weight_gain_kg, weight_status,
+                language, created_at
+            FROM pregnancy_guides
+            WHERE user_id = %s
+            ORDER BY created_at DESC
+        """, (user_id,))
+        
+        guides = cur.fetchall()
+        
+        cur.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'guides': [dict(g) for g in guides],
+            'total': len(guides)
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 # ========================================
 # MAIN EXECUTION
