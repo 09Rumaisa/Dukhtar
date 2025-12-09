@@ -9,13 +9,9 @@ from datetime import datetime, timedelta
 import os
 # Updated LangChain imports - using correct modern imports
 from langchain_community.document_loaders import WebBaseLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_openai import ChatOpenAI  # Updated import
-from langchain_core.prompts import ChatPromptTemplate
-from langchain.chains import RetrievalQA
-from langchain_community.vectorstores import Chroma  # Updated import
-from langchain_openai import OpenAIEmbeddings
+from langchain_core.messages import HumanMessage
+# Removed heavy imports: Chroma, OpenAIEmbeddings, RetrievalQA to save memory
 
 # Import the DukhtarAgent from main.py
 from main import DukhtarAgent
@@ -317,81 +313,76 @@ def pregnancy_tracker():
         print(f"✓ TAVILY_API_KEY: {tavily_key[:10]}...")
         print(f"✓ OPENAI_API_KEY: {openai_key[:10]}...")
         
-        # Initialize Tavily search tool with error handling
-        try:
-            tavily_tool = TavilySearchResults(k=5, tavily_api_key=tavily_key)
-            print("✓ Tavily tool initialized")
-        except Exception as e:
-            print(f"ERROR initializing Tavily: {e}")
-            return render_template('pregnancy_tracker_form.html', 
-                                 error="Search service unavailable. Please try again later.")
+        # Use direct Tavily API instead of deprecated TavilySearchResults to save memory
+        print("✓ Using direct Tavily API calls")
         
-        # Create search queries
+        # OPTIMIZED: Use only 2 targeted searches instead of 5 to reduce memory and API calls
         search_queries = [
-            f"pregnancy week {pregnancy_week} baby development fetal growth",
-            f"pregnancy trimester {trimester} diet nutrition meal plan",
-            f"pregnancy week {pregnancy_week} safe exercises physical activity",
-            f"pregnancy weight gain week {pregnancy_week} normal range BMI",
-            f"pregnancy week {pregnancy_week} symptoms what to expect"
+            f"pregnancy week {pregnancy_week} baby development symptoms diet",
+            f"pregnancy week {pregnancy_week} weight gain exercise recommendations"
         ]
         
-        print(f"Starting search with {len(search_queries)} queries...")
+        print(f"Starting optimized search with {len(search_queries)} queries...")
         
-        # Gather information from multiple sources
+        # Gather information using direct Tavily API
         all_search_results = []
         successful_searches = 0
         
         for i, query in enumerate(search_queries):
             try:
                 print(f"Executing search {i+1}/{len(search_queries)}: {query}")
-                results = tavily_tool.run(query)
-                if results:
-                    # Tavily returns a string, not a list - append it directly
-                    all_search_results.append(results)
-                    successful_searches += 1
-                    print(f"✓ Search {i+1} successful")
-                else:
-                    print(f"⚠ Search {i+1} returned no results")
+                
+                # Direct Tavily API call - more memory efficient
+                import requests
+                tavily_url = "https://api.tavily.com/search"
+                headers = {"Content-Type": "application/json"}
+                payload = {
+                    "api_key": tavily_key,
+                    "query": query,
+                    "search_depth": "basic",
+                    "max_results": 2  # Reduced from 5 to save memory
+                }
+                
+                response = requests.post(tavily_url, json=payload, headers=headers, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+                
+                # Extract only essential info
+                results = data.get("results", [])
+                for result in results:
+                    snippet = result.get("content", result.get("snippet", ""))
+                    if snippet:
+                        all_search_results.append(snippet[:500])  # Limit to 500 chars per result
+                
+                successful_searches += 1
+                print(f"✓ Search {i+1} successful")
+                
             except Exception as e:
-                print(f"ERROR in search {i+1}: {e}")
+                print(f"⚠ Search {i+1} failed: {e}")
                 continue
         
         print(f"✓ Completed {successful_searches}/{len(search_queries)} searches successfully")
         
-        # Web scraping with better error handling - FIX URL FORMAT
-        url = f"https://www.whattoexpect.com/pregnancy/week-by-week/week-{pregnancy_week}/"
-        print(f"Attempting to load: {url}")
+        # OPTIMIZED: Skip web scraping to save memory - rely on Tavily search results only
+        print("⚠ Skipping web scraping to conserve memory")
         
-        web_data = []
-        try:
-            loader = WebBaseLoader(url)
-            web_data = loader.load()
-            print(f"✓ Web scraping successful - got {len(web_data)} documents")
-        except Exception as e:
-            print(f"⚠ Web scraping failed: {e}")
-            # Continue without web data
+        # Combine search results only
+        all_content = "\n\n".join(all_search_results)
         
-        # Combine all information
-        all_content = ""
-        for result in all_search_results:
-            all_content += f"{result}\n\n"
-        
-        for doc in web_data:
-            all_content += f"{doc.page_content}\n\n"
+        # Limit total content to prevent memory issues
+        if len(all_content) > 3000:
+            all_content = all_content[:3000]
         
         print(f"✓ Combined content length: {len(all_content)} characters")
         
-        # SIMPLIFIED APPROACH: Skip vector store, use direct OpenAI API to save memory
+        # MEMORY OPTIMIZED: Use direct OpenAI API instead of LangChain to reduce memory footprint
         try:
-            print("Initializing LLM...")
-            llm = ChatOpenAI(
-                model="gpt-4o-mini",
-                openai_api_key=openai_key,
-                temperature=0.7
-            )
-            print("✓ LLM initialized")
+            print("Initializing OpenAI client...")
+            from openai import OpenAI
+            client = OpenAI(api_key=openai_key)
+            print("✓ OpenAI client initialized")
         except Exception as e:
-            print(f"ERROR initializing LLM: {e}")
+            print(f"ERROR initializing OpenAI: {e}")
             return render_template('pregnancy_tracker_form.html', 
                                  error="AI service unavailable. Please try again later.")
         
@@ -399,12 +390,7 @@ def pregnancy_tracker():
         try:
             print("Creating personalized prompt...")
             
-            # Limit content to prevent token overflow
-            if len(all_content) > 8000:
-                all_content = all_content[:8000] + "..."
-            
-            user_info_text = f"""
-Pregnancy Week: {pregnancy_week}
+            user_info_text = f"""Pregnancy Week: {pregnancy_week}
 Trimester: {trimester}
 Current Weight: {current_weight} kg
 Pre-pregnancy Weight: {pre_pregnancy_weight} kg
@@ -413,40 +399,35 @@ Age: {age}
 Pre-pregnancy BMI: {pre_pregnancy_bmi:.1f}
 Weight Gain So Far: {weight_gain:.1f} kg
 Activity Level: {activity_level}
-Dietary Restrictions: {dietary_restrictions}
-Medical Conditions: {medical_conditions}
-Preferred Language: {language}
-"""
+Dietary Restrictions: {dietary_restrictions or 'None'}
+Medical Conditions: {medical_conditions or 'None'}"""
             
             # Determine language-specific instructions
             if language.lower() == 'urdu':
-                language_instruction = "Please provide the entire response in Urdu language with proper Urdu grammar and vocabulary."
+                language_instruction = "Provide the entire response in Urdu language."
             else:
-                language_instruction = "Please provide the response in English."
+                language_instruction = "Provide the response in English."
             
-            prompt = f"""You are an expert pregnancy and maternal health advisor. Based on the user's specific information and the context provided, create a comprehensive, personalized article about their pregnancy journey.
+            # Simplified prompt to reduce token usage
+            prompt = f"""You are a pregnancy health advisor. Create a personalized guide for week {pregnancy_week}.
 
-User Information:
+User Info:
 {user_info_text}
 
-Context from medical sources:
+Medical Context:
 {all_content}
 
 {language_instruction}
 
-Please create a detailed, well-structured article that includes:
+Create a guide with these sections:
+1. Baby's Development at week {pregnancy_week}
+2. Weight Analysis (current gain: {weight_gain:.1f} kg)
+3. Diet Recommendations
+4. Safe Exercises
+5. Expected Symptoms
+6. Health Tips
 
-1. **BABY'S DEVELOPMENT** - Detailed information about fetal development at week {pregnancy_week}
-2. **WEIGHT ANALYSIS** - Assessment of current weight gain (is it normal, too much, or too little?)
-3. **PERSONALIZED DIET PLAN** - Specific meal recommendations considering their restrictions
-4. **SAFE EXERCISE ROUTINE** - Appropriate exercises for their activity level and pregnancy stage
-5. **SYMPTOMS TO EXPECT** - Common symptoms at this stage and when to contact doctor
-6. **IMPORTANT REMINDERS** - Key things to remember and upcoming milestones
-7. **HEALTH TIPS** - Specific advice for their situation
-
-Make the article engaging, informative, and reassuring. Include specific examples and practical advice.
-
-Create a comprehensive pregnancy guide for week {pregnancy_week}."""
+Keep it concise, practical, and reassuring."""
 
             print("✓ Prompt created")
             
@@ -455,19 +436,26 @@ Create a comprehensive pregnancy guide for week {pregnancy_week}."""
             return render_template('pregnancy_tracker_form.html', 
                                  error="Error setting up AI assistant. Please try again.")
         
-        # Get the response directly from LLM (no vector store needed)
+        # Get the response using direct OpenAI API (more memory efficient)
         try:
             print("Generating AI response...")
-            from langchain_core.messages import HumanMessage
             
-            messages = [HumanMessage(content=prompt)]
-            response = llm.invoke(messages)
-            article_content = response.content
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a helpful pregnancy health advisor."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=1500  # Limit response size to save memory
+            )
+            
+            article_content = response.choices[0].message.content
             
             print(f"✓ AI response generated - length: {len(article_content)} characters")
             
             if not article_content or len(article_content) < 100:
-                print("⚠ AI response seems too short, might be an error")
+                print("⚠ AI response seems too short")
                 article_content = "Unable to generate full guide. Please try again."
                 
         except Exception as e:

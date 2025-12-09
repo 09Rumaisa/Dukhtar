@@ -17,6 +17,6 @@ requests==2.31.0
 tavily-python
 boto3==1.34.34
 gunicorn==21.2.0
-chromadb
+# Removed chromadb - heavy memory usage, not needed for pregnancy tracker
 beautifulsoup4
 lxml
