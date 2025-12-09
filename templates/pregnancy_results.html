@@ -558,21 +558,36 @@
             const articleContent = document.getElementById('articleContent');
             let textToRead = articleContent.innerText;
 
-            // Add some context from the page
-            const weekInfo = document.querySelector('.week-info h2').innerText;
-            const weightStatus = document.querySelector('.weight-status');
-            let weightStatusText = '';
-            if (weightStatus) {
-                weightStatusText = weightStatus.innerText;
+            // OPTIMIZED: Limit text to first 1200 chars to prevent timeout
+            // This gives ~1.5 minutes of audio which is reasonable
+            if (textToRead.length > 1200) {
+                // Try to cut at sentence boundary
+                let truncated = textToRead.substring(0, 1200);
+                const lastPeriod = truncated.lastIndexOf('.');
+                if (lastPeriod > 800) {
+                    textToRead = truncated.substring(0, lastPeriod + 1);
+                } else {
+                    textToRead = truncated + '...';
+                }
+                console.log('Text truncated to prevent timeout:', textToRead.length, 'chars');
             }
 
-            // Combine all text
-            const fullText = `${weekInfo}. ${weightStatusText}. ${textToRead}`;
+            // Add brief context
+            const weekInfo = document.querySelector('.week-info h2');
+            let contextText = weekInfo ? weekInfo.innerText + '. ' : '';
 
-            // Get the language from the user info (you'll need to pass this from the backend)
+            // Combine (keep it short)
+            const fullText = contextText + textToRead;
+
+            // Get the language
             const language = '{{ user_info.language if user_info.language else "english" }}';
 
-            // Send request to generate speech
+            console.log('Generating audio for', fullText.length, 'characters');
+
+            // Send request with timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
+
             fetch('/generate_speech', {
                 method: 'POST',
                 headers: {
@@ -582,11 +597,20 @@
                     text: fullText,
                     voice: 'nova',
                     language: language
-                })
+                }),
+                signal: controller.signal
             })
-            .then(response => response.json())
+            .then(response => {
+                clearTimeout(timeoutId);
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.audio_url) {
+                    console.log('Audio generated successfully:', data.duration || 'unknown time');
+                    
                     // Store the audio URL for cleanup
                     currentAudioUrl = data.audio_url;
                     
@@ -606,7 +630,10 @@
                     readAloudBtn.querySelector('i').className = 'fas fa-stop';
                     
                     // Auto-play
-                    audioElement.play();
+                    audioElement.play().catch(err => {
+                        console.error('Autoplay failed:', err);
+                        alert('Audio ready! Click the play button to listen.');
+                    });
                     
                     // Handle audio end
                     audioElement.addEventListener('ended', stopAudio);
@@ -616,8 +643,17 @@
                 }
             })
             .catch(error => {
+                clearTimeout(timeoutId);
                 console.error('Error generating speech:', error);
-                alert('Sorry, there was an error generating the audio. Please try again.');
+                
+                let errorMsg = 'Sorry, there was an error generating the audio.';
+                if (error.name === 'AbortError') {
+                    errorMsg = 'Audio generation timed out. The text might be too long. Please try again.';
+                } else if (error.message) {
+                    errorMsg += ' ' + error.message;
+                }
+                
+                alert(errorMsg);
                 
                 // Reset button state
                 readAloudBtn.disabled = false;

@@ -591,27 +591,38 @@ Keep it concise, practical, and reassuring."""
 
 @app.route('/generate_speech', methods=['POST'])
 def generate_speech():
-    """Generate speech audio from text using OpenAI TTS and upload to S3"""
+    """Generate speech audio from text using OpenAI TTS and upload to S3 - OPTIMIZED"""
     try:
         data = request.get_json()
         text = data.get('text', '')
-        voice = data.get('voice', 'nova')  # Default voice
+        voice = data.get('voice', 'nova')
         language = data.get('language', 'english')
         
         if not text:
             return jsonify({'error': 'No text provided'}), 400
         
-        # Clean the text for TTS (remove HTML tags, etc.)
+        # Clean the text for TTS
         import re
         cleaned_text = re.sub(r'<[^>]+>', '', text)
-        cleaned_text = re.sub(r'\*\*([^*]+)\*\*', r'\1', cleaned_text)  # Remove bold markdown
-        cleaned_text = re.sub(r'\*([^*]+)\*', r'\1', cleaned_text)  # Remove italic markdown
-        cleaned_text = cleaned_text.replace('\n\n', '. ')  # Replace double newlines with periods
+        cleaned_text = re.sub(r'\*\*([^*]+)\*\*', r'\1', cleaned_text)
+        cleaned_text = re.sub(r'\*([^*]+)\*', r'\1', cleaned_text)
+        cleaned_text = re.sub(r'#+\s*', '', cleaned_text)  # Remove markdown headers
+        cleaned_text = cleaned_text.replace('\n\n', '. ')
         cleaned_text = cleaned_text.strip()
         
-        # Limit text length to avoid very long audio files
-        if len(cleaned_text) > 4000:
-            cleaned_text = cleaned_text[:4000] + "..."
+        # CRITICAL: Limit to 1500 chars to prevent timeout (was 4000)
+        # Average speaking rate: 150 words/min = ~750 chars/min
+        # 1500 chars = ~2 minutes of audio = safe for 120s timeout
+        if len(cleaned_text) > 1500:
+            # Try to cut at sentence boundary
+            truncated = cleaned_text[:1500]
+            last_period = truncated.rfind('.')
+            if last_period > 1000:  # If we found a period reasonably close
+                cleaned_text = truncated[:last_period + 1]
+            else:
+                cleaned_text = truncated + "..."
+            
+            print(f"⚠ Text truncated from {len(text)} to {len(cleaned_text)} chars to prevent timeout")
         
         # Initialize OpenAI client
         from openai import OpenAI
@@ -619,38 +630,46 @@ def generate_speech():
         
         # Choose voice based on language
         if language.lower() == 'urdu':
-            voice = 'nova'  # Nova works well for non-English languages
+            voice = 'nova'
         else:
-            voice = voice or 'nova'  # Default to nova for English
+            voice = voice or 'nova'
         
-        # Generate speech
+        print(f"Generating audio: {len(cleaned_text)} chars, voice={voice}, lang={language}")
+        
+        # Generate speech with timeout protection
+        import time
+        start_time = time.time()
+        
         response = client.audio.speech.create(
-            model="tts-1",
+            model="tts-1",  # Faster than tts-1-hd
             voice=voice,
-            input=cleaned_text
+            input=cleaned_text,
+            speed=1.1  # Slightly faster to reduce audio length
         )
         
-        # Get audio content
         audio_content = response.content
+        generation_time = time.time() - start_time
+        print(f"✓ Audio generated in {generation_time:.2f}s, size: {len(audio_content)} bytes")
         
         # Upload to S3
         from aws_s3_utils import get_s3_manager
         s3 = get_s3_manager()
         audio_url = s3.upload_audio_file(audio_content)
         
-        print(f"✓ Audio uploaded to S3: {audio_url}")
+        total_time = time.time() - start_time
+        print(f"✓ Total time: {total_time:.2f}s, Audio URL: {audio_url}")
         
-        # Return the S3 URL
         return jsonify({
             'audio_url': audio_url,
-            'message': 'Speech generated successfully'
+            'message': 'Speech generated successfully',
+            'duration': f"{total_time:.1f}s"
         })
         
     except Exception as e:
-        print(f"Error generating speech: {e}")
+        print(f"ERROR generating speech: {e}")
         import traceback
         traceback.print_exc()
-        return jsonify({'error': 'Failed to generate speech'}), 500
+        return jsonify({'error': f'Failed to generate speech: {str(e)}'}), 500
 
 @app.route('/cleanup_audio', methods=['POST'])
 def cleanup_audio():
