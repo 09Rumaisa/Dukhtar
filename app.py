@@ -381,12 +381,16 @@ def pregnancy_tracker():
         
         print(f"✓ Combined content length: {len(all_content)} characters")
         
-        # Create embeddings and vector store
+        # Create embeddings and vector store (optimized for low memory)
         try:
-            text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+            # Reduce chunk size and limit total chunks to save memory
+            text_splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100)
             
             if all_content.strip():
                 splits = text_splitter.split_text(all_content)
+                # Limit to 20 chunks to reduce memory usage
+                if len(splits) > 20:
+                    splits = splits[:20]
                 print(f"✓ Text split into {len(splits)} chunks")
             else:
                 splits = ["General pregnancy information for comprehensive care."]
@@ -428,9 +432,9 @@ def pregnancy_tracker():
             return render_template('pregnancy_tracker_form.html', 
                                  error="AI service unavailable. Please try again later.")
         
-        # Create retriever and QA chain
+        # Create retriever and QA chain (reduced k to save memory)
         try:
-            retriever = vectorstore.as_retriever(search_kwargs={"k": 8})
+            retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
             print("✓ Retriever created")
             
             # Create personalized prompt
