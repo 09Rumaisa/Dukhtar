@@ -381,44 +381,7 @@ def pregnancy_tracker():
         
         print(f"✓ Combined content length: {len(all_content)} characters")
         
-        # Create embeddings and vector store (optimized for low memory)
-        try:
-            # Reduce chunk size and limit total chunks to save memory
-            text_splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100)
-            
-            if all_content.strip():
-                splits = text_splitter.split_text(all_content)
-                # Limit to 20 chunks to reduce memory usage
-                if len(splits) > 20:
-                    splits = splits[:20]
-                print(f"✓ Text split into {len(splits)} chunks")
-            else:
-                splits = ["General pregnancy information for comprehensive care."]
-                print("⚠ Using fallback content - no search results available")
-            
-            print("Initializing embeddings...")
-            embeddings = OpenAIEmbeddings(
-                model="text-embedding-3-small",
-                openai_api_key=openai_key,
-            )
-            
-            print("Creating vector store...")
-            # Use in-memory vector store to avoid chromadb version issues
-            import uuid
-            collection_name = f"pregnancy_{uuid.uuid4().hex[:8]}"
-            vectorstore = Chroma.from_texts(
-                texts=splits,
-                embedding=embeddings,
-                collection_name=collection_name
-            )
-            print("✓ Vector store created")
-            
-        except Exception as e:
-            print(f"ERROR creating vector store: {e}")
-            return render_template('pregnancy_tracker_form.html', 
-                                 error="Error processing information. Please try again.")
-        
-        # Initialize LLM
+        # SIMPLIFIED APPROACH: Skip vector store, use direct OpenAI API to save memory
         try:
             print("Initializing LLM...")
             llm = ChatOpenAI(
@@ -432,26 +395,28 @@ def pregnancy_tracker():
             return render_template('pregnancy_tracker_form.html', 
                                  error="AI service unavailable. Please try again later.")
         
-        # Create retriever and QA chain (reduced k to save memory)
+        # Create personalized prompt with search results directly
         try:
-            retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
-            print("✓ Retriever created")
+            print("Creating personalized prompt...")
             
-            # Create personalized prompt
-            user_info = f"""
-            Pregnancy Week: {pregnancy_week}
-            Trimester: {trimester}
-            Current Weight: {current_weight} kg
-            Pre-pregnancy Weight: {pre_pregnancy_weight} kg
-            Height: {height} cm
-            Age: {age}
-            Pre-pregnancy BMI: {pre_pregnancy_bmi:.1f}
-            Weight Gain So Far: {weight_gain:.1f} kg
-            Activity Level: {activity_level}
-            Dietary Restrictions: {dietary_restrictions}
-            Medical Conditions: {medical_conditions}
-            Preferred Language: {language}
-            """
+            # Limit content to prevent token overflow
+            if len(all_content) > 8000:
+                all_content = all_content[:8000] + "..."
+            
+            user_info_text = f"""
+Pregnancy Week: {pregnancy_week}
+Trimester: {trimester}
+Current Weight: {current_weight} kg
+Pre-pregnancy Weight: {pre_pregnancy_weight} kg
+Height: {height} cm
+Age: {age}
+Pre-pregnancy BMI: {pre_pregnancy_bmi:.1f}
+Weight Gain So Far: {weight_gain:.1f} kg
+Activity Level: {activity_level}
+Dietary Restrictions: {dietary_restrictions}
+Medical Conditions: {medical_conditions}
+Preferred Language: {language}
+"""
             
             # Determine language-specific instructions
             if language.lower() == 'urdu':
@@ -459,19 +424,13 @@ def pregnancy_tracker():
             else:
                 language_instruction = "Please provide the response in English."
             
-            qa_chain = RetrievalQA.from_chain_type(
-                llm=llm,
-                chain_type="stuff",
-                retriever=retriever,
-                return_source_documents=True,
-                chain_type_kwargs={
-                    "prompt": ChatPromptTemplate.from_template(f"""
-You are an expert pregnancy and maternal health advisor. Based on the user's specific information and the context provided, create a comprehensive, personalized article about their pregnancy journey.
+            prompt = f"""You are an expert pregnancy and maternal health advisor. Based on the user's specific information and the context provided, create a comprehensive, personalized article about their pregnancy journey.
 
 User Information:
-{user_info}
+{user_info_text}
 
-Context from medical sources: {{context}}
+Context from medical sources:
+{all_content}
 
 {language_instruction}
 
@@ -487,23 +446,24 @@ Please create a detailed, well-structured article that includes:
 
 Make the article engaging, informative, and reassuring. Include specific examples and practical advice.
 
-Question: Create a comprehensive pregnancy guide for week {pregnancy_week}.
+Create a comprehensive pregnancy guide for week {pregnancy_week}."""
 
-Helpful Answer:""")
-                }
-            )
-            print("✓ QA chain created")
+            print("✓ Prompt created")
             
         except Exception as e:
-            print(f"ERROR creating QA chain: {e}")
+            print(f"ERROR creating prompt: {e}")
             return render_template('pregnancy_tracker_form.html', 
                                  error="Error setting up AI assistant. Please try again.")
         
-        # Get the response
+        # Get the response directly from LLM (no vector store needed)
         try:
             print("Generating AI response...")
-            result = qa_chain.invoke({"query": f"pregnancy week {pregnancy_week} comprehensive guide"})
-            article_content = result["result"]
+            from langchain_core.messages import HumanMessage
+            
+            messages = [HumanMessage(content=prompt)]
+            response = llm.invoke(messages)
+            article_content = response.content
+            
             print(f"✓ AI response generated - length: {len(article_content)} characters")
             
             if not article_content or len(article_content) < 100:
@@ -516,15 +476,6 @@ Helpful Answer:""")
             traceback.print_exc()
             return render_template('pregnancy_tracker_form.html', 
                                  error=f"Error generating personalized guide: {str(e)}")
-        
-        # Clean up the vector store
-        try:
-            if hasattr(vectorstore, '_client'):
-                vectorstore._client.delete_collection(vectorstore._collection.name)
-                print("✓ Vector store cleaned up")
-        except Exception as e:
-            print(f"⚠ Error cleaning up vector store: {e}")
-            # Continue anyway - in-memory store will be garbage collected
         
         # Additional personalization based on BMI and weight gain
         if pre_pregnancy_bmi < 18.5:
