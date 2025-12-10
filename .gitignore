@@ -74,3 +74,5 @@ static/audio/*.mp3
 *.backup
 FIXES_SUMMARY.md
 AUDIO_TIMEOUT_FIX.md
+DEPLOY_AUDIO_FIX.md
+DEPLOY_AUDIO_FIX.md

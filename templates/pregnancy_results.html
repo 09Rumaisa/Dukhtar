@@ -52,6 +52,11 @@
             box-shadow: var(--shadow-heavy);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+        
+        .container > .header-actions:first-child {
+            margin-bottom: 2rem;
         }
 
         .header {
@@ -423,6 +428,25 @@
 </head>
 <body>
     <div class="container">
+        <div class="header-actions">
+            <a href="{{ url_for('pregnancy_tracker') }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i>
+                Get My Pregnancy Guide
+            </a>
+            <a href="{{ url_for('index') }}" class="btn btn-tertiary">
+                <i class="fas fa-arrow-left"></i>
+                Back to Home
+            </a>
+            <a href="{{ url_for('pregnancy_tracker') }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i>
+                Update Information
+            </a>
+            <a href="#" class="btn btn-tertiary" onclick="window.history.back()">
+                <i class="fas fa-arrow-left"></i>
+                Go Back
+            </a>
+        </div>
+        
         <div class="header">
             <div class="header-icon">🤱</div>
             <h1>Your Pregnancy Guide</h1>
@@ -498,17 +522,6 @@
         
         <div class="article-content" id="articleContent">
             {{ article|safe }}
-        </div>
-        
-        <div class="action-buttons">
-            <a href="{{ url_for('pregnancy_tracker') }}" class="btn btn-primary">
-                <i class="fas fa-edit"></i>
-                Update Information
-            </a>
-            <a href="#" class="btn btn-tertiary" onclick="window.history.back()">
-                <i class="fas fa-arrow-left"></i>
-                Go Back
-            </a>
         </div>
         
         <div class="disclaimer">
