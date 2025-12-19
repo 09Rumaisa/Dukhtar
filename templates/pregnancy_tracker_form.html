@@ -52,6 +52,45 @@
             box-shadow: var(--shadow-heavy);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+        
+        .top-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-light);
+            text-decoration: none;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+        
+        .btn-tertiary {
+            background: var(--gradient-secondary);
+            color: var(--neutral-dark);
         }
 
         .header {
@@ -235,6 +274,17 @@
                 padding: 1rem 2rem;
                 font-size: 1rem;
             }
+            
+            .top-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .top-actions .btn {
+                width: 100%;
+                max-width: 250px;
+                justify-content: center;
+            }
         }
 
         @media (max-width: 480px) {
@@ -254,6 +304,17 @@
 </head>
 <body>
     <div class="container">
+        <div class="top-actions">
+            <button type="submit" form="pregnancy-form" class="btn btn-primary">
+                <i class="fas fa-magic"></i>
+                Get My Pregnancy Guide
+            </button>
+            <a href="{{ url_for('home') }}" class="btn btn-tertiary">
+                <i class="fas fa-arrow-left"></i>
+                Back to Home
+            </a>
+        </div>
+        
         <div class="header">
             <div class="header-icon">🤱</div>
             <h1>Pregnancy Tracker</h1>
@@ -271,7 +332,7 @@
             </div>
         {% endif %}
         
-        <form method="POST">
+        <form method="POST" id="pregnancy-form">
             <div class="form-grid">
                 <div class="form-group">
                     <label for="pregnancy_week">
@@ -371,11 +432,6 @@
                 Get My Pregnancy Guide
             </button>
         </form>
-        
-        <a href="/" class="back-link">
-            <i class="fas fa-arrow-left"></i>
-            Back to Home
-        </a>
     </div>
     
     <script>
