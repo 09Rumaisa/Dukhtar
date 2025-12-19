@@ -57,7 +57,7 @@
         
         .top-actions {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
             gap: 1rem;
             margin-bottom: 2rem;
             flex-wrap: wrap;
@@ -305,6 +305,7 @@
 <body>
     <div class="container">
         <div class="top-actions">
+            <div></div>
             <a href="{{ url_for('home') }}" class="btn btn-tertiary">
                 <i class="fas fa-arrow-left"></i>
                 Back to Home
