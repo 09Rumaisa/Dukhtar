@@ -57,7 +57,7 @@
         
         .top-actions {
             display: flex;
-            justify-content: center;
+            justify-content: flex-end;
             gap: 1rem;
             margin-bottom: 2rem;
             flex-wrap: wrap;
@@ -305,10 +305,6 @@
 <body>
     <div class="container">
         <div class="top-actions">
-            <button type="submit" form="pregnancy-form" class="btn btn-primary">
-                <i class="fas fa-magic"></i>
-                Get My Pregnancy Guide
-            </button>
             <a href="{{ url_for('home') }}" class="btn btn-tertiary">
                 <i class="fas fa-arrow-left"></i>
                 Back to Home
@@ -339,7 +335,7 @@
                         <i class="fas fa-calendar-week"></i>
                         Pregnancy Week <span class="required">*</span>
                     </label>
-                    <input type="number" id="pregnancy_week" name="pregnancy_week" min="1" max="42" required placeholder="Enter week (1-42)">
+                    <input type="number" id="pregnancy_week" name="pregnancy_week" min="1" max="42" required placeholder="Enter week (1-42) | حمل کا ہفتہ">
                 </div>
                 
                 <div class="form-group">
@@ -360,7 +356,7 @@
                         <i class="fas fa-weight"></i>
                         Current Weight (kg) <span class="required">*</span>
                     </label>
-                    <input type="number" id="current_weight" name="current_weight" step="0.1" min="30" max="200" required placeholder="e.g., 65.5">
+                    <input type="number" id="current_weight" name="current_weight" step="0.1" min="30" max="200" required placeholder="e.g., 65.5 | موجودہ وزن">
                 </div>
                 
                 <div class="form-group">
@@ -368,7 +364,7 @@
                         <i class="fas fa-weight-hanging"></i>
                         Pre-pregnancy Weight (kg) <span class="required">*</span>
                     </label>
-                    <input type="number" id="pre_pregnancy_weight" name="pre_pregnancy_weight" step="0.1" min="30" max="200" required placeholder="e.g., 60.0">
+                    <input type="number" id="pre_pregnancy_weight" name="pre_pregnancy_weight" step="0.1" min="30" max="200" required placeholder="e.g., 60.0 | حمل سے پہلے وزن">
                 </div>
                 
                 <div class="form-group">
@@ -376,7 +372,7 @@
                         <i class="fas fa-ruler-vertical"></i>
                         Height (cm) <span class="required">*</span>
                     </label>
-                    <input type="number" id="height" name="height" min="100" max="250" required placeholder="e.g., 165">
+                    <input type="number" id="height" name="height" min="100" max="250" required placeholder="e.g., 165 | قد">
                 </div>
                 
                 <div class="form-group">
@@ -384,7 +380,7 @@
                         <i class="fas fa-birthday-cake"></i>
                         Age <span class="required">*</span>
                     </label>
-                    <input type="number" id="age" name="age" min="15" max="50" required placeholder="e.g., 28">
+                    <input type="number" id="age" name="age" min="15" max="50" required placeholder="e.g., 28 | عمر">
                 </div>
             </div>
             
@@ -416,7 +412,7 @@
                     <i class="fas fa-utensils"></i>
                     Dietary Restrictions (Optional)
                 </label>
-                <textarea id="dietary_restrictions" name="dietary_restrictions" rows="3" placeholder="e.g., vegetarian, diabetic, allergies to specific foods..."></textarea>
+                <textarea id="dietary_restrictions" name="dietary_restrictions" rows="3" placeholder="e.g., vegetarian, diabetic, allergies | غذائی پابندیاں"></textarea>
             </div>
             
             <div class="form-group">
@@ -424,7 +420,7 @@
                     <i class="fas fa-heartbeat"></i>
                     Medical Conditions (Optional)
                 </label>
-                <textarea id="medical_conditions" name="medical_conditions" rows="3" placeholder="e.g., gestational diabetes, high blood pressure, thyroid issues..."></textarea>
+                <textarea id="medical_conditions" name="medical_conditions" rows="3" placeholder="e.g., diabetes, blood pressure, thyroid | طبی حالات"></textarea>
             </div>
             
             <button type="submit" class="submit-btn">
